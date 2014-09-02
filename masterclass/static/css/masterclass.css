@@ -1,0 +1,26 @@
+/* CSS for MasterclassXBlock */
+
+.masterclass_block .capacity {
+    font-weight: bold;
+}
+
+.masterclass-edit-header {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    padding: 18px 0 18px 20px;
+    top: 0 !important;
+    right: 0;
+    background-color: #009fe6;
+    border-bottom: 1px solid #005f8a;
+    color: #fff;
+}
+
+.masterclass-component-name {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 50%;
+    color: #fff;
+    font-weight: 600;
+}

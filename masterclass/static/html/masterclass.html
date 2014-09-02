@@ -1,0 +1,30 @@
+{% load i18n %}
+<div class="masterclass_block" role="application">
+    <h2 class="problem-header">{{display_name}}</h2>
+
+    <p>Free places: <span class="capacity">{{free}} out of {{capacity}}</span></p>
+
+    {% if registrants_list %}
+    <ul>
+        {% for student_id, name, email, approved in registrants_list %}
+        <li>{{name}} ({{email}})
+            {% if approval_button %}
+              {% if approved %}
+                 <span class="student_approval_button">Unapprove</span>
+              {% else %}
+                 <span class="student_approval_button">Approve</span>
+              {% endif %}
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="registration_status">{{status_string}}</p>
+
+    <div class="action">
+        <button class="show">
+            <span class="register_button show-label">{{button_text}}</span>
+        </button>
+    </div>
+    {% endif %}
+</div>
