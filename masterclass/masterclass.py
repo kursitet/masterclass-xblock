@@ -21,6 +21,9 @@ import unicodecsv
 
 from webob.response import Response
 
+import webob
+import urllib
+
 import logging
 
 log = logging.getLogger(__name__)
@@ -128,7 +131,7 @@ class MasterclassXBlock(XBlock):
 
     def acquire_student_name(self, student_id):
         user = User.objects.get(id=student_id)
-        return user.get_full_name()
+        return user.profile.name
 
     def acquire_student_username(self, student_id):
         user = User.objects.get(id=student_id)
@@ -141,6 +144,9 @@ class MasterclassXBlock(XBlock):
     def is_user_course_staff(self):
         return self.xmodule_runtime.get_user_role() in ['staff', 'instructor']
 
+    def get_parent(self):
+        return self.xmodule_runtime.get_block(self.runtime.modulestore.get_parent_location(self.location))
+
     def get_peer_blocks(self):
         # Technically, I should be able to only do this in studio view,
         # and save the location of the actual test or tests... but that can wait,
@@ -152,8 +158,9 @@ class MasterclassXBlock(XBlock):
             peers = [self.runtime.get_block(child_name) for child_name in self.get_parent().children]
         except AttributeError:
             # So we dig through the location tree instead.
-            parent_location = self.runtime.modulestore.get_parent_location(self.location)
-            peers = self.runtime.get_block(parent_location).get_children()
+            return self.get_parent().get_children()
+            # parent_location = self.runtime.modulestore.get_parent_location(self.location)
+            #peers = self.runtime.get_block(parent_location).get_children()
 
         return peers
 
@@ -361,30 +368,42 @@ class MasterclassXBlock(XBlock):
 
         results = []
 
-        filename = "Testfilename.csv"
+        parent_name = self.xmodule_runtime.get_module(self.get_parent()).display_name_with_default
+        # Getting the course display name is proving too complicated to bother at the moment.
+        course_name = self.course_id.course
+
+        filename = u"{0} - {1}.csv".format(course_name, parent_name)
 
         for student in self.approved_registrations:
             results.append(
                 {
-                    "username": self.acquire_student_username(student),
+                    "email": self.acquire_student_email(student),
                     "name": self.acquire_student_name(student),
-                    "email": self.acquire_student_email(student)
                 }
             )
 
         if len(results):
             with contextlib.closing(StringIO.StringIO()) as handle:
-                writer = unicodecsv.DictWriter(handle, results[0].keys(), encoding='utf-8')
+                writer = unicodecsv.DictWriter(handle, results[0].keys(), encoding='utf-8',
+                                               dialect=unicodecsv.excel_tab)
                 writer.writeheader()
                 for row in results:
                     writer.writerow(row)
+                # Notice the enforced UTF-8 byte order mark here.
+                # This ensures that Windows Excel can read an UTF-8 encoded CSV correctly
+                # It does not appear to hinder any other programs that can read CSV.
                 output_string = codecs.BOM_UTF8 + handle.getvalue()
 
-            print output_string
+            print filename
             return Response(
+                charset = 'utf8',
                 body=output_string,
                 content_type="text/csv",
-                content_disposition="attachment; filename=" + filename
+                # Note: See https://stackoverflow.com/questions/93551/how-to-encode-the-filename-parameter-of-content-disposition-header-in-http
+                # This is going to be a problem further on as well.
+                # This variation seems to work reliably in Chrome, but no clue on other places, will
+                # need testing...
+                content_disposition="attachment; filename=" + urllib.quote(filename.encode('utf8'))
             )
 
     @XBlock.json_handler
