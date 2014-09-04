@@ -328,10 +328,10 @@ class MasterclassXBlock(XBlock):
             if (self.capacity - len(self.approved_registrations)) > 0:
                 if self.is_registration_allowed_by_test():
                     if self.approval_required:
-                        self.approved_registrations.append(student)
+                        self.pending_registrations.append(student)
                         result_message = "Your request for registration is now waiting for staff approval."
                     else:
-                        self.pending_registrations.append(student)
+                        self.approved_registrations.append(student)
                         result_message = "You have been successfully registered."
 
                 else:
