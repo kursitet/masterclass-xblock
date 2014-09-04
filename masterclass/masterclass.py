@@ -20,9 +20,6 @@ import logging
 
 log = logging.getLogger('masterclass')
 
-import pprint
-
-pp = pprint.PrettyPrinter(indent=4)
 import pdb
 
 
@@ -118,7 +115,11 @@ class MasterclassXBlock(XBlock):
         """
         This is a wrapper function to abstract away the api-breaking fact that I can't know who the user is.
         """
-        return self.xmodule_runtime.get_real_user(self.xmodule_runtime.anonymous_student_id).id
+        try:
+            return self.xmodule_runtime.get_real_user(self.xmodule_runtime.anonymous_student_id).id
+        except TypeError:
+            return None
+
 
     def acquire_student_name(self, student_id):
         user = User.objects.get(id=student_id)
@@ -222,7 +223,7 @@ class MasterclassXBlock(XBlock):
 
         registrants_list = None
 
-        if self.show_control_panel():
+        if student is not None and self.show_control_panel():
             registrants_list = []
             for that_student in self.approved_registrations:
                 registrants_list.append(
@@ -288,12 +289,17 @@ class MasterclassXBlock(XBlock):
         It's not like there's a point in seeing the register button there anyway.
         """
 
+        test_required = None
+        for peer in self.get_peer_blocks():
+            if peer.has_score:
+                test_required = peer.location
+                break
+
         html = self.resource_string('static/html/masterclass_author.html')
         fragment = Fragment()
         fragment.add_css(self.resource_string("static/css/masterclass.css"))
         fragment.add_content(self.render_template_from_string(html,
-                                                              test_required=any(
-                                                                  peer.has_score for peer in self.get_peer_blocks()),
+                                                              test_required=test_required,
                                                               approval_required=self.approval_required,
                                                               display_name=self.display_name,
                                                               capacity=self.capacity,
@@ -307,6 +313,10 @@ class MasterclassXBlock(XBlock):
         """
 
         student = self.acquire_student_id()
+
+        if student is None:
+            return {'registration_status': "Registration button does not work in Studio.",
+                    "button_text": "Register"}
 
         if student in self.pending_registrations:
             self.pending_registrations.remove(student)
