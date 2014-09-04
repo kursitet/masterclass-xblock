@@ -135,14 +135,7 @@ class MasterclassXBlock(XBlock):
     def show_control_panel(self):
         return self.xmodule_runtime.get_user_role() in ['staff', 'instructor']
 
-    def is_registration_allowed_by_test(self):
-        """
-        Determine if a test is required to join this masterclass.
-        We're assuming that this is the fact when the masterclass has any peers,
-        i.e. modules with the same location parent as itself, which
-        return a score. For the moment only the first block found that does is counted as relevant.
-
-        """
+    def get_peer_blocks(self):
         # Technically, I should be able to only do this in studio view,
         # and save the location of the actual test or tests... but that can wait,
         # and also has potential problems like "so how do we force it to recalculate".
@@ -155,6 +148,19 @@ class MasterclassXBlock(XBlock):
             # So we dig through the location tree instead.
             parent_location = self.runtime.modulestore.get_parent_location(self.location)
             peers = self.runtime.get_block(parent_location).get_children()
+
+        return peers
+
+    def is_registration_allowed_by_test(self):
+        """
+        Determine if a test is required to join this masterclass.
+        We're assuming that this is the fact when the masterclass has any peers,
+        i.e. modules with the same location parent as itself, which
+        return a score. For the moment only the first block found that does is counted as relevant.
+
+        """
+
+        peers = self.get_peer_blocks()
 
         # Now that we have a list of peers, walk it and see if any of them are problems.
         for peer in peers:
@@ -171,6 +177,7 @@ class MasterclassXBlock(XBlock):
                     scoredata = self.xmodule_runtime.get_module(peer).get_score()
 
                     # The second time returns correct data, however.
+                    # There's got to be a race condition somewhere, but I'm not up to finding it right now.
                     problem_score = self.xmodule_runtime.get_module(peer).get_score()['score']
 
 
@@ -244,7 +251,7 @@ class MasterclassXBlock(XBlock):
 
     def studio_view(self, context=None):
         """
-        This view should in theory present our settings page to the Studio.
+        This is the Studio settings page.
         The neat way of autogenerating it is from Staff Graded Assignment block.
         (Why isn't this the default anyway?)
         """
@@ -270,6 +277,25 @@ class MasterclassXBlock(XBlock):
         fragment.add_content(self.render_template_from_string(html, fields=edit_fields))
         fragment.add_javascript(self.resource_string("static/js/src/masterclass_studio.js"))
         fragment.initialize_js('MasterclassXBlockStudio')
+        return fragment
+
+    def author_view(self, context=None):
+        """
+        This view shows up in stidio.
+        Since at this moment, runtime does not seem to allow us to know who the active user is while in studio,
+        we'll be using an alternative passive template.
+        It's not like there's a point in seeing the register button there anyway.
+        """
+
+        html = self.resource_string('static/html/masterclass_author.html')
+        fragment = Fragment()
+        fragment.add_content(self.render_template_from_string(html,
+                                                              test_required=any(
+                                                                  peer.has_score for peer in self.get_peer_blocks()),
+                                                              approval_required=self.approval_required,
+                                                              display_name=self.display_name,
+                                                              capacity=self.capacity,
+                                                              free=self.capacity - len(self.approved_registrations)))
         return fragment
 
     @XBlock.json_handler

@@ -1,0 +1,17 @@
+{% load i18n %}
+<div class="masterclass_block_author" role="application">
+    <h2 class="problem-header">{{display_name}}</h2>
+
+    <p>Free places: <span class="capacity">{{free}} out of {{capacity}}</span></p>
+
+    {% if test_required %}
+    <p>Completing a test in this unit is required to be eligible for registration.</p>
+    {% else %}
+    <p>No testing will be required to register for this master-class.</p>
+    {% endif %}
+    {% if approval_required %}
+    <p>Course staff must manually approve all registrations.</p>
+    {% else %}
+    <p>Registrations will be approved automatically</p>
+    {% endif %}
+</div>
