@@ -1,6 +1,8 @@
 /* Javascript for MasterclassXBlock. */
 function MasterclassXBlock(runtime, element) {
 
+    $(element).find('.masterclass-get-csv-link').attr('href',runtime.handlerUrl(element, 'get_csv'));
+
     function updateStatus(result) {
         $('.registration_status', element).text(result.registration_status);
         $('.register_button', element).text(result.button_text);
@@ -41,7 +43,7 @@ function MasterclassXBlock(runtime, element) {
             type: "POST",
             url: handlerUrl,
             data: JSON.stringify({"getcsv":"Yes"}),
-            success: responseCSV
+            //success: responseCSV
         });
     });
 

@@ -16,9 +16,14 @@ from django.contrib.auth.models import User
 
 from xmodule.exceptions import UndefinedContext
 
+import StringIO, codecs, contextlib
+import unicodecsv
+
+from webob.response import Response
+
 import logging
 
-log = logging.getLogger('masterclass')
+log = logging.getLogger(__name__)
 
 import pdb
 
@@ -133,7 +138,7 @@ class MasterclassXBlock(XBlock):
         user = User.objects.get(id=student_id)
         return user.email
 
-    def show_control_panel(self):
+    def is_user_course_staff(self):
         return self.xmodule_runtime.get_user_role() in ['staff', 'instructor']
 
     def get_peer_blocks(self):
@@ -223,7 +228,7 @@ class MasterclassXBlock(XBlock):
 
         registrants_list = None
 
-        if student is not None and self.show_control_panel():
+        if student is not None and self.is_user_course_staff():
             registrants_list = []
             if self.approval_required:
                 button_text = "Unapprove"
@@ -236,8 +241,10 @@ class MasterclassXBlock(XBlock):
             if self.approval_required:
                 for that_student in self.pending_registrations:
                     registrants_list.append(
-                        (that_student, self.acquire_student_name(that_student), self.acquire_student_email(that_student),
-                        "Approve"))
+                        (
+                            that_student, self.acquire_student_name(that_student),
+                            self.acquire_student_email(that_student),
+                            "Approve"))
 
         frag.add_content(self.render_template_from_string(html,
                                                           display_name=self.display_name,
@@ -342,13 +349,43 @@ class MasterclassXBlock(XBlock):
                 self.approved_registrations.append(student)
                 new_button_text = "Remove"
 
-        return {'button_text': new_button_text }
+        return {'button_text': new_button_text}
 
-    @XBlock.json_handler
+    @XBlock.handler
     def get_csv(self, data, suffix=''):
         """This function should send a CSV of all the approved registrants to the user."""
-        
-        return {'button_text':"Ok"}
+
+        if not self.is_user_course_staff():
+            log.error("Somehow a someone other than course staff has requested a CSV of master-class registrants")
+            return
+
+        results = []
+
+        filename = "Testfilename.csv"
+
+        for student in self.approved_registrations:
+            results.append(
+                {
+                    "username": self.acquire_student_username(student),
+                    "name": self.acquire_student_name(student),
+                    "email": self.acquire_student_email(student)
+                }
+            )
+
+        if len(results):
+            with contextlib.closing(StringIO.StringIO()) as handle:
+                writer = unicodecsv.DictWriter(handle, results[0].keys(), encoding='utf-8')
+                writer.writeheader()
+                for row in results:
+                    writer.writerow(row)
+                output_string = codecs.BOM_UTF8 + handle.getvalue()
+
+            print output_string
+            return Response(
+                body=output_string,
+                content_type="text/csv",
+                content_disposition="attachment; filename=" + filename
+            )
 
     @XBlock.json_handler
     def register_button(self, data, suffix=''):

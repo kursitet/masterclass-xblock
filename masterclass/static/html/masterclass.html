@@ -8,11 +8,11 @@
     <ul class="masterclass-student-list">
         {% for student_id, name, email, button_text in registrants_list %}
         <li class="student" data-student="{{student_id}}">{{name}} ({{email}})
-              <button class="student_approval_button">{{button_text}}</button>
+            <button class="student_approval_button">{{button_text}}</button>
         </li>
         {% endfor %}
     </ul>
-    <button class="masterclass-get-csv">Get CSV</button>
+    <a href="" class="masterclass-get-csv-link">List of registered students as CSV.</a>
     {% else %}
     <p class="registration_status">{{status_string}}</p>
 
