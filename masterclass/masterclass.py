@@ -276,6 +276,7 @@ class MasterclassXBlock(XBlock):
         fragment = Fragment()
         fragment.add_content(self.render_template_from_string(html, fields=edit_fields))
         fragment.add_javascript(self.resource_string("static/js/src/masterclass_studio.js"))
+        fragment.add_css(self.resource_string("static/css/masterclass.css"))
         fragment.initialize_js('MasterclassXBlockStudio')
         return fragment
 
@@ -289,6 +290,7 @@ class MasterclassXBlock(XBlock):
 
         html = self.resource_string('static/html/masterclass_author.html')
         fragment = Fragment()
+        fragment.add_css(self.resource_string("static/css/masterclass.css"))
         fragment.add_content(self.render_template_from_string(html,
                                                               test_required=any(
                                                                   peer.has_score for peer in self.get_peer_blocks()),
