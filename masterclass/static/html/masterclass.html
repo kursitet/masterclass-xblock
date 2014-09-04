@@ -5,19 +5,14 @@
     <p>Free places: <span class="capacity">{{free}} out of {{capacity}}</span></p>
 
     {% if registrants_list %}
-    <ul>
-        {% for student_id, name, email, approved in registrants_list %}
-        <li>{{name}} ({{email}})
-            {% if approval_button %}
-              {% if approved %}
-                 <span class="student_approval_button">Unapprove</span>
-              {% else %}
-                 <span class="student_approval_button">Approve</span>
-              {% endif %}
-            {% endif %}
+    <ul class="masterclass-student-list">
+        {% for student_id, name, email, button_text in registrants_list %}
+        <li class="student" data-student="{{student_id}}">{{name}} ({{email}})
+              <button class="student_approval_button">{{button_text}}</button>
         </li>
         {% endfor %}
     </ul>
+    <button class="masterclass-get-csv">Get CSV</button>
     {% else %}
     <p class="registration_status">{{status_string}}</p>
 

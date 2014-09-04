@@ -17,16 +17,33 @@ function MasterclassXBlock(runtime, element) {
     });
 
     function updateStudents(result) {
-
+        $('.approval_button', element).text(result.button_text);
     }
 
-    $(element).find('.student_approval_button').bind('click', function() {
-        var handlerUrl = runtime.handlerUrl(element,'approval_button');
+    $(element).find('.student_approval_button').bind('click', function () {
+        var handlerUrl = runtime.handlerUrl(element, 'approval_button');
+        var student_id = $(this).closest('.student').data('student');
         $.ajax({
-           type: "POST",
+            type: "POST",
             url: handlerUrl,
-            data: JSON.stringify({"student_id":"Meh!"}),
+            data: JSON.stringify({"student_id":student_id}),
             success: updateStudents
         });
     });
+
+    function responseCSV(result) {
+        $('.masterclass-get-csv', element).text(result.button_text);
+    }
+
+    $(element).find('.masterclass-get-csv').bind('click', function () {
+        var handlerUrl = runtime.handlerUrl(element, 'get_csv');
+        $.ajax({
+            type: "POST",
+            url: handlerUrl,
+            data: JSON.stringify({"getcsv":"Yes"}),
+            success: responseCSV
+        });
+    });
+
 }
+

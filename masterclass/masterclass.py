@@ -225,14 +225,19 @@ class MasterclassXBlock(XBlock):
 
         if student is not None and self.show_control_panel():
             registrants_list = []
+            if self.approval_required:
+                button_text = "Unapprove"
+            else:
+                button_text = "Remove"
             for that_student in self.approved_registrations:
                 registrants_list.append(
                     (that_student, self.acquire_student_name(that_student), self.acquire_student_email(that_student),
-                     True))
-            for that_student in self.pending_registrations:
-                registrants_list.append(
-                    (that_student, self.acquire_student_name(that_student), self.acquire_student_email(that_student),
-                     False))
+                     button_text))
+            if self.approval_required:
+                for that_student in self.pending_registrations:
+                    registrants_list.append(
+                        (that_student, self.acquire_student_name(that_student), self.acquire_student_email(that_student),
+                        "Approve"))
 
         frag.add_content(self.render_template_from_string(html,
                                                           display_name=self.display_name,
@@ -240,7 +245,6 @@ class MasterclassXBlock(XBlock):
                                                           free=self.capacity - len(self.approved_registrations),
                                                           button_text=self.registration_button_text(student),
                                                           registrants_list=registrants_list,
-                                                          approval_button=self.approval_required,
                                                           status_string=self.registration_status_string(student),
         ))
 
@@ -270,9 +274,6 @@ class MasterclassXBlock(XBlock):
             (cls.approval_required, 'boolean')
         ))
 
-        context = {
-            'fields': edit_fields
-        }
         html = self.resource_string('static/html/masterclass_studio.html')
         fragment = Fragment()
         fragment.add_content(self.render_template_from_string(html, fields=edit_fields))
@@ -283,7 +284,7 @@ class MasterclassXBlock(XBlock):
 
     def author_view(self, context=None):
         """
-        This view shows up in stidio.
+        This view shows up in studio.
         Since at this moment, runtime does not seem to allow us to know who the active user is while in studio,
         we'll be using an alternative passive template.
         It's not like there's a point in seeing the register button there anyway.
@@ -305,6 +306,49 @@ class MasterclassXBlock(XBlock):
                                                               capacity=self.capacity,
                                                               free=self.capacity - len(self.approved_registrations)))
         return fragment
+
+    @XBlock.json_handler
+    def approval_button(self, data, suffix=''):
+        """
+        Handle the approve/unapprove/remove button in registrants list view.
+        """
+
+        student = data['student_id']
+
+        if student in self.approved_registrations:
+            if self.approval_required:
+                self.approved_registrations.remove(student)
+                self.pending_registrations.append(student)
+                new_button_text = "Remove"
+            else:
+                self.approved_registrations.remove(student)
+                new_button_text = "Register"
+        elif student in self.pending_registrations:
+            if self.approval_required:
+                self.pending_registrations.remove(student)
+                self.approved_registrations.append(student)
+                new_button_text = "Unapprove"
+            else:
+                # This branch shouldn't happen.
+                # If approval isn't required, the list should be empty,
+                # and the button shouldn't exist.
+                self.pending_registrations.remove(student)
+                new_button_text = "Something odd happened"
+        else:
+            if self.approval_required:
+                self.pending_registrations.append(student)
+                new_button_text = "Approve"
+            else:
+                self.approved_registrations.append(student)
+                new_button_text = "Remove"
+
+        return {'button_text': new_button_text }
+
+    @XBlock.json_handler
+    def get_csv(self, data, suffix=''):
+        """This function should send a CSV of all the approved registrants to the user."""
+        
+        return {'button_text':"Ok"}
 
     @XBlock.json_handler
     def register_button(self, data, suffix=''):
