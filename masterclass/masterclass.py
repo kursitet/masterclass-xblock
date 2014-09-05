@@ -16,19 +16,21 @@ from django.contrib.auth.models import User
 
 from xmodule.exceptions import UndefinedContext
 
+# And here we reach even deeper into the guts of edX
+from bulk_email.models import CourseEmailTemplate
+from courseware import courses as CourseData
+import pdb
+
 import StringIO, codecs, contextlib
 import unicodecsv
 
 from webob.response import Response
 
-import webob
 import urllib
 
 import logging
 
 log = logging.getLogger(__name__)
-
-import pdb
 
 
 class MasterclassXBlock(XBlock):
@@ -96,12 +98,6 @@ class MasterclassXBlock(XBlock):
         scope=Scope.user_state_summary
     )
 
-    # A view for the studio seems to be called 'studio_view'.
-    # LMS view for the instructor is 'instructor_view'? Maybe.
-    # Another interesting name is 'fallback_view'
-    # Blocks having children are supposed to call their renderers 
-    # with render_children...
-
     def registration_status_string(self, student_id):
         if student_id in self.approved_registrations:
             return "You are registered for this master-class."
@@ -141,11 +137,23 @@ class MasterclassXBlock(XBlock):
         user = User.objects.get(id=student_id)
         return user.email
 
+    def acquire_course_name(self):
+        return CourseData.get_course(self.course_id.course).display_name_with_default
+
+    def acquire_parent_name(self):
+        return self.xmodule_runtime.get_module(self.get_parent()).display_name_with_default
+
     def is_user_course_staff(self):
         return self.xmodule_runtime.get_user_role() in ['staff', 'instructor']
 
     def get_parent(self):
         return self.xmodule_runtime.get_block(self.runtime.modulestore.get_parent_location(self.location))
+
+    def send_email_to_student(self, student_id, subject, text):
+        return
+
+    def send_email_to_list(self, list, subject, text):
+        return
 
     def get_peer_blocks(self):
         # Technically, I should be able to only do this in studio view,
@@ -160,7 +168,7 @@ class MasterclassXBlock(XBlock):
             # So we dig through the location tree instead.
             return self.get_parent().get_children()
             # parent_location = self.runtime.modulestore.get_parent_location(self.location)
-            #peers = self.runtime.get_block(parent_location).get_children()
+            # peers = self.runtime.get_block(parent_location).get_children()
 
         return peers
 
@@ -228,6 +236,8 @@ class MasterclassXBlock(XBlock):
         student = self.acquire_student_id()
 
         html = self.resource_string("static/html/masterclass.html")
+
+        pdb.set_trace()
 
         frag = Fragment()
         frag.add_css(self.resource_string("static/css/masterclass.css"))
@@ -341,6 +351,11 @@ class MasterclassXBlock(XBlock):
             if self.approval_required:
                 self.pending_registrations.remove(student)
                 self.approved_registrations.append(student)
+                # For the moment that will suffice, I need to test the whole email mechanism first...
+                self.send_email_to_student(student, "Your master-class registration.",
+                                           "Your master-class registration to {course_name} - {parent_name} has been approved.".format(
+                                               course_name=self.acquire_course_name(),
+                                               parent_name=self.acquire_parent_name()))
                 new_button_text = "Unapprove"
             else:
                 # This branch shouldn't happen.
@@ -363,14 +378,13 @@ class MasterclassXBlock(XBlock):
         """This function should send a CSV of all the approved registrants to the user."""
 
         if not self.is_user_course_staff():
-            log.error("Somehow a someone other than course staff has requested a CSV of master-class registrants")
+            log.error("Somehow someone other than course staff has requested a CSV of master-class registrants")
             return
 
         results = []
 
-        parent_name = self.xmodule_runtime.get_module(self.get_parent()).display_name_with_default
-        # Getting the course display name is proving too complicated to bother at the moment.
-        course_name = self.course_id.course
+        parent_name = self.acquire_parent_name()
+        course_name = self.acquire_course_name()
 
         filename = u"{0} - {1}.csv".format(course_name, parent_name)
 
@@ -396,7 +410,7 @@ class MasterclassXBlock(XBlock):
 
             print filename
             return Response(
-                charset = 'utf8',
+                charset='utf8',
                 body=output_string,
                 content_type="text/csv",
                 # Note: See https://stackoverflow.com/questions/93551/how-to-encode-the-filename-parameter-of-content-disposition-header-in-http
