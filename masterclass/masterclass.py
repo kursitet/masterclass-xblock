@@ -31,8 +31,6 @@ except:
 
 from django.core.mail import send_mail,EmailMultiAlternatives
 
-import pdb
-
 import StringIO, codecs, contextlib
 import unicodecsv
 
@@ -166,12 +164,14 @@ class MasterclassXBlock(XBlock):
         # we're going to use the edX email templater, and then toss the email directly through
         # the Django mailer.
 
+        email_template = CourseEmailTemplate.get_template()
+
         from_address = get_source_address(self.course_id,self.acquire_course_name())
-        context = get_email_context(CourseData.get_course(self.course_id.course))
+        context = get_email_context(CourseData.get_course(self.course_id))
         context['email'] = self.acquire_student_email(student_id)
         context['name'] = self.acquire_student_name(student_id)
-        plaintext_message = CourseEmailTemplate.render_plaintext(text,context)
-        html_message = CourseEmailTemplate.render_htmltext(text,context)
+        plaintext_message = email_template.render_plaintext(text,context)
+        html_message = email_template.render_htmltext(text,context)
 
         email_message = EmailMultiAlternatives(subject,plaintext_message,from_address,[self.acquire_student_email(student_id)])
         email_message.attach_alternative(html_message,'text/html')
@@ -261,8 +261,6 @@ class MasterclassXBlock(XBlock):
         student = self.acquire_student_id()
 
         html = self.resource_string("static/html/masterclass.html")
-
-        #pdb.set_trace()
 
         frag = Fragment()
         frag.add_css(self.resource_string("static/css/masterclass.css"))
@@ -377,8 +375,8 @@ class MasterclassXBlock(XBlock):
                 self.pending_registrations.remove(student)
                 self.approved_registrations.append(student)
                 # For the moment that will suffice, I need to test the whole email mechanism first...
-                self.send_email_to_student(student, "Your master-class registration.",
-                                           "Your master-class registration to {course_name} - {parent_name} has been approved.".format(
+                self.send_email_to_student(student, u"Your master-class registration.",
+                                          u"Your master-class registration to {course_name} - {parent_name} has been approved.".format(
                                                course_name=self.acquire_course_name(),
                                                parent_name=self.acquire_parent_name()))
                 new_button_text = "Unapprove"
