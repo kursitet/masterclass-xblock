@@ -18,7 +18,11 @@ from xmodule.exceptions import UndefinedContext
 
 # And here we reach even deeper into the guts of edX
 from bulk_email.models import CourseEmailTemplate
+from bulk_email.tasks import _get_course_email_context as get_email_context
+from bulk_email.tasks import _get_source_address as get_source_address
 from courseware import courses as CourseData
+from django.core.mail import send_mail,EmailMultiAlternatives
+
 import pdb
 
 import StringIO, codecs, contextlib
@@ -150,9 +154,22 @@ class MasterclassXBlock(XBlock):
         return self.xmodule_runtime.get_block(self.runtime.modulestore.get_parent_location(self.location))
 
     def send_email_to_student(self, student_id, subject, text):
-        return
+        # Instead of sending the email through the rest of the edX bulk mail system,
+        # we're going to use the edX email templater, and then toss the email directly through
+        # the Django mailer.
 
-    def send_email_to_list(self, list, subject, text):
+        from_address = get_source_address(self.course_id,self.acquire_course_name())
+        context = get_email_context(CourseData.get_course(self.course_id.course))
+        context['email'] = self.acquire_student_email(student_id)
+        context['name'] = self.acquire_student_name(student_id)
+        plaintext_message = CourseEmailTemplate.render_plaintext(text,context)
+        html_message = CourseEmailTemplate.render_htmltext(text,context)
+
+        email_message = EmailMultiAlternatives(subject,plaintext_message,from_address,[self.acquire_student_email(student_id)])
+        email_message.attach_alternative(html_message,'text/html')
+
+        email_message.send(fail_silently=True)
+
         return
 
     def get_peer_blocks(self):
