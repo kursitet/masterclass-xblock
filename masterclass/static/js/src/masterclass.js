@@ -19,7 +19,7 @@ function MasterclassXBlock(runtime, element) {
     });
 
     function updateStudents(result) {
-        $('.approval_button', element).text(result.button_text);
+        $('.student_approval_button', element).text(result.button_text);
     }
 
     $(element).find('.student_approval_button').bind('click', function () {

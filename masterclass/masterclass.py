@@ -17,10 +17,18 @@ from django.contrib.auth.models import User
 from xmodule.exceptions import UndefinedContext
 
 # And here we reach even deeper into the guts of edX
-from bulk_email.models import CourseEmailTemplate
-from bulk_email.tasks import _get_course_email_context as get_email_context
-from bulk_email.tasks import _get_source_address as get_source_address
-from courseware import courses as CourseData
+try:
+    from bulk_email.models import CourseEmailTemplate
+    from bulk_email.tasks import _get_course_email_context as get_email_context
+    from bulk_email.tasks import _get_source_address as get_source_address
+    from courseware import courses as CourseData
+except:
+    # Except we're running in Studio, so all of this stuff isn't available.
+    # It's interesting that modules actually do import, they just don't finish loading,
+    # because Studio doesn't provide the requisite settings.*
+    # Thankfully we aren't going to need it while running in Studio.
+    pass
+
 from django.core.mail import send_mail,EmailMultiAlternatives
 
 import pdb
@@ -142,7 +150,7 @@ class MasterclassXBlock(XBlock):
         return user.email
 
     def acquire_course_name(self):
-        return CourseData.get_course(self.course_id.course).display_name_with_default
+        return CourseData.get_course(self.course_id).display_name_with_default
 
     def acquire_parent_name(self):
         return self.xmodule_runtime.get_module(self.get_parent()).display_name_with_default
@@ -254,7 +262,7 @@ class MasterclassXBlock(XBlock):
 
         html = self.resource_string("static/html/masterclass.html")
 
-        pdb.set_trace()
+        #pdb.set_trace()
 
         frag = Fragment()
         frag.add_css(self.resource_string("static/css/masterclass.css"))
