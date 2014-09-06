@@ -1,18 +1,22 @@
 {% load i18n %}
+{% trans "List of registered students as CSV." as csv_text %}
+{% trans "Free places:" as freeplaces_text %}
 <div class="masterclass_block" role="application">
     <h2 class="problem-header">{{display_name}}</h2>
 
-    <p>Free places: <span class="capacity">{{free}} out of {{capacity}}</span></p>
+    <p>{{freeplaces_text}}<span class="capacity">{{free}}/{{capacity}}</span></p>
 
     {% if registrants_list %}
     <ul class="masterclass-student-list">
         {% for student_id, name, email, button_text in registrants_list %}
         <li class="student">{{name}} ({{email}})
-            <button class="student_approval_button masterclass-button" data-student="{{student_id}}">{{button_text}}</button>
+            <button class="student_approval_button masterclass-button" data-student="{{student_id}}">{{button_text}}
+            </button>
         </li>
         {% endfor %}
     </ul>
-    <a href="" class="masterclass-get-csv-link">List of registered students as CSV.</a>
+
+    <a href="" class="masterclass-get-csv-link">{{csv_text}}</a>
     {% else %}
     <p class="registration_status">{{status_string}}</p>
 
