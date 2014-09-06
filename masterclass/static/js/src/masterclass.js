@@ -24,13 +24,35 @@ function MasterclassXBlock(runtime, element) {
 
     $(element).find('.student_approval_button').bind('click', function () {
         var handlerUrl = runtime.handlerUrl(element, 'approval_button');
-        //var student_id = $(this).closest('.student').data('student');
         var student_id = $(this).data('student');
         $.ajax({
             type: "POST",
             url: handlerUrl,
             data: JSON.stringify({"student_id": student_id}),
             success: updateStudents
+        });
+    });
+
+    $(element).find('.send-mail-button').bind('click', function () {
+        $(element).find('.send-mail-wrapper').toggle();
+    });
+
+    function mailSent(result) {
+        $(element).find('.send-mail-wrapper').toggle();
+        $(element).find('input#email_subject').val('');
+        $(element).find('textarea#email_content').val('');
+    }
+
+    $(element).find('.send-mail-submit').bind('click', function () {
+        var handlerUrl = runtime.handlerUrl(element, 'send_mail_to_all');
+        $.ajax({
+            type: "POST",
+            url: handlerUrl,
+            data: JSON.stringify({
+                "subject": $(element).find('input#email_subject').val(),
+                "text": $(element).find('textarea#email_content').val()
+            }),
+            success: mailSent
         });
     });
 

@@ -1,10 +1,8 @@
 {% load i18n %}
-{% trans "List of registered students as CSV." as csv_text %}
-{% trans "Free places:" as freeplaces_text %}
 <div class="masterclass_block" role="application">
     <h2 class="problem-header">{{display_name}}</h2>
 
-    <p>{{freeplaces_text}}<span class="capacity">{{free}}/{{capacity}}</span></p>
+    <p>{% trans "Free places:" %}<span class="capacity">{{free}}/{{capacity}}</span></p>
 
     {% if registrants_list %}
     <ul class="masterclass-student-list">
@@ -16,7 +14,16 @@
         {% endfor %}
     </ul>
 
-    <a href="" class="masterclass-get-csv-link">{{csv_text}}</a>
+    <p><a href="" class="masterclass-get-csv-link">{% trans "List of registered students as CSV." %}</a></p>
+
+    <p class="send-mail-button">{% trans "Send mail to registered students." %}</p>
+    <div class="send-mail-wrapper" style="display: none;">
+        <label class="label" for="email_subject">{% trans "Subject:" %}</label>
+        <input class="input" type="text" id="email_subject" name="email_subject"/>
+        <textarea id="email_content" maxlength="10000"></textarea>
+        <button class="send-mail-submit">{%trans "Send mail" %}</button>
+    </div>
+
     {% else %}
     <p class="registration_status">{{status_string}}</p>
 

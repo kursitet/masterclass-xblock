@@ -29,7 +29,7 @@ except:
     # Thankfully we aren't going to need it while running in Studio.
     pass
 
-from django.core.mail import send_mail, EmailMultiAlternatives
+from django.core import mail
 
 import StringIO, codecs, contextlib
 import unicodecsv
@@ -164,25 +164,33 @@ class MasterclassXBlock(XBlock):
     def get_parent(self):
         return self.xmodule_runtime.get_block(self.runtime.modulestore.get_parent_location(self.location))
 
-    def send_email_to_student(self, student_id, subject, text):
+    def send_email_to_student(self, receivers, subject, text):
         # Instead of sending the email through the rest of the edX bulk mail system,
         # we're going to use the edX email templater, and then toss the email directly through
         # the Django mailer.
 
+        # We're assuming receivers is a list of User IDs.
+
+        emails = []
+
         email_template = CourseEmailTemplate.get_template()
-
-        from_address = get_source_address(self.course_id, self.acquire_course_name())
         context = get_email_context(CourseData.get_course(self.course_id))
-        context['email'] = self.acquire_student_email(student_id)
-        context['name'] = self.acquire_student_name(student_id)
-        plaintext_message = email_template.render_plaintext(text, context)
-        html_message = email_template.render_htmltext(text, context)
+        from_address = get_source_address(self.course_id, self.acquire_course_name())
 
-        email_message = EmailMultiAlternatives(subject, plaintext_message, from_address,
-                                               [self.acquire_student_email(student_id)])
-        email_message.attach_alternative(html_message, 'text/html')
+        for student_id in receivers:
+            context['email'] = self.acquire_student_email(student_id)
+            context['name'] = self.acquire_student_name(student_id)
 
-        email_message.send(fail_silently=True)
+            plaintext_message = email_template.render_plaintext(text, context)
+            html_message = email_template.render_htmltext(text, context)
+
+            email_message = mail.EmailMultiAlternatives(subject, plaintext_message, from_address, [context['email']])
+            email_message.attach_alternative(html_message, 'text/html')
+
+            emails.append(email_message)
+
+        connection = mail.get_connection()
+        connection.send_messages(emails)
 
         return
 
@@ -382,7 +390,7 @@ class MasterclassXBlock(XBlock):
                 self.pending_registrations.remove(student)
                 self.approved_registrations.append(student)
                 # For the moment that will suffice, I need to test the whole email mechanism first...
-                self.send_email_to_student(student, self._(u"Your master-class registration."),
+                self.send_email_to_student([student], self._(u"Your master-class registration."),
                                            self._(
                                                u"Your master-class registration to {course_name} - {parent_name} has been approved.").format(
                                                course_name=self.acquire_course_name(),
@@ -449,6 +457,21 @@ class MasterclassXBlock(XBlock):
                 # need testing...
                 content_disposition="attachment; filename=" + urllib.quote(filename.encode('utf8'))
             )
+
+    @XBlock.json_handler
+    def send_mail_to_all(self, data, suffix=''):
+        if not self.is_user_course_staff():
+            log.error("Somehow someone other than course staff tried to send mail to all master-class registrants.")
+            return
+
+        subject = data.get('subject')
+        text = data.get('text')
+        if subject and text:
+            self.send_email_to_student(self.approved_registrations + [self.acquire_student_id()], subject, text)
+            return {'status': "ok"}
+        else:
+            return {'status': "fail"}
+
 
     @XBlock.json_handler
     def register_button(self, data, suffix=''):
