@@ -439,7 +439,6 @@ class MasterclassXBlock(XBlock):
                 # It does not appear to hinder any other programs that can read CSV.
                 output_string = codecs.BOM_UTF8 + handle.getvalue()
 
-            print filename
             return Response(
                 charset='utf8',
                 body=output_string,
