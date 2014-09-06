@@ -16,6 +16,20 @@
     color: #fff;
 }
 
+.masterclass-button {
+    font-family: "Source Sans", "Open Sans", Verdana, Geneva, sans-serif, sans-serif;
+    color: #2e2e2e;
+    font-weight: 600;
+    font-size: 0.8em;
+    float: right;
+    width: 12em;
+    clear: both;
+}
+
+li.student {
+    line-height: 2em;
+}
+
 .masterclass-component-name {
     position: relative;
     top: 0;
@@ -23,9 +37,4 @@
     width: 50%;
     color: #fff;
     font-weight: 600;
-}
-
-.masterclass-student-list button.student-approval-button {
-    float: right;
-    width: 12em;
 }
