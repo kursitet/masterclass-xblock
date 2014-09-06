@@ -29,7 +29,7 @@ except:
     # Thankfully we aren't going to need it while running in Studio.
     pass
 
-from django.core.mail import send_mail,EmailMultiAlternatives
+from django.core.mail import send_mail, EmailMultiAlternatives
 
 import StringIO, codecs, contextlib
 import unicodecsv
@@ -41,6 +41,7 @@ import urllib
 import logging
 
 log = logging.getLogger(__name__)
+
 
 @XBlock.needs("i18n")
 class MasterclassXBlock(XBlock):
@@ -170,15 +171,16 @@ class MasterclassXBlock(XBlock):
 
         email_template = CourseEmailTemplate.get_template()
 
-        from_address = get_source_address(self.course_id,self.acquire_course_name())
+        from_address = get_source_address(self.course_id, self.acquire_course_name())
         context = get_email_context(CourseData.get_course(self.course_id))
         context['email'] = self.acquire_student_email(student_id)
         context['name'] = self.acquire_student_name(student_id)
-        plaintext_message = email_template.render_plaintext(text,context)
-        html_message = email_template.render_htmltext(text,context)
+        plaintext_message = email_template.render_plaintext(text, context)
+        html_message = email_template.render_htmltext(text, context)
 
-        email_message = EmailMultiAlternatives(subject,plaintext_message,from_address,[self.acquire_student_email(student_id)])
-        email_message.attach_alternative(html_message,'text/html')
+        email_message = EmailMultiAlternatives(subject, plaintext_message, from_address,
+                                               [self.acquire_student_email(student_id)])
+        email_message.attach_alternative(html_message, 'text/html')
 
         email_message.send(fail_silently=True)
 
@@ -289,6 +291,7 @@ class MasterclassXBlock(XBlock):
                             that_student, self.acquire_student_name(that_student),
                             self.acquire_student_email(that_student),
                             self._(u"Approve")))
+            registrants_list.sort(key=lambda student: student[1])
 
         frag.add_content(self.render_template_from_string(html,
                                                           display_name=self.display_name,
@@ -380,7 +383,8 @@ class MasterclassXBlock(XBlock):
                 self.approved_registrations.append(student)
                 # For the moment that will suffice, I need to test the whole email mechanism first...
                 self.send_email_to_student(student, self._(u"Your master-class registration."),
-                                          self._(u"Your master-class registration to {course_name} - {parent_name} has been approved.").format(
+                                           self._(
+                                               u"Your master-class registration to {course_name} - {parent_name} has been approved.").format(
                                                course_name=self.acquire_course_name(),
                                                parent_name=self.acquire_parent_name()))
                 new_button_text = self._(u"Unapprove")
@@ -397,7 +401,8 @@ class MasterclassXBlock(XBlock):
                 self.approved_registrations.append(student)
                 new_button_text = self._(u"Remove")
 
-        return {'button_text': new_button_text}
+        return {'button_text': new_button_text,
+                'student_id': student}
 
     @XBlock.handler
     def get_csv(self, data, suffix=''):

@@ -7,8 +7,8 @@
     {% if registrants_list %}
     <ul class="masterclass-student-list">
         {% for student_id, name, email, button_text in registrants_list %}
-        <li class="student" data-student="{{student_id}}">{{name}} ({{email}})
-            <button class="student_approval_button">{{button_text}}</button>
+        <li class="student">{{name}} ({{email}})
+            <button class="student_approval_button" data-student="{{student_id}}">{{button_text}}</button>
         </li>
         {% endfor %}
     </ul>
