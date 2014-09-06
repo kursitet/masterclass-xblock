@@ -25,10 +25,7 @@
     font-weight: 600;
 }
 
-.masterclass-student-list {
-    list-style-type: none;
-}
-
-.masterclass-student-list .student-approval-button {
+.masterclass-student-list button.student-approval-button {
     float: right;
+    width: 12em;
 }
