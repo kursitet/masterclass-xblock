@@ -440,7 +440,7 @@ class MasterclassXBlock(XBlock):
         if len(results):
             with contextlib.closing(StringIO.StringIO()) as handle:
                 writer = unicodecsv.DictWriter(handle, results[0].keys(), encoding='utf-8',
-                                               dialect=unicodecsv.excel_tab)
+                                               dialect=unicodecsv.excel)
                 writer.writeheader()
                 for row in results:
                     writer.writerow(row)
