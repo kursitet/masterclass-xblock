@@ -288,9 +288,9 @@ class MasterclassXBlock(XBlock):
         if student is not None and self.is_user_course_staff():
             registrants_list = []
             if self.approval_required:
-                button_text = u"Удалить заявку"
+                button_text = u"Удалить"
             else:
-                button_text = u"Удалить регистрацию"
+                button_text = u"Удалить"
             for that_student in self.approved_registrations:
                 registrants_list.append(
                     (that_student, self.acquire_student_name(that_student), self.acquire_student_email(that_student),
