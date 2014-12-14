@@ -1,15 +1,8 @@
 {% load i18n %}
-<div class="wrapper-comp-editor">
-    <section class="editor-with-tabs">
-        <div class="masterclass-edit-header">
-            <span class="masterclass-component-name">Master-class settings</span>
-        </div>
-        <div class="tabs-wrapper">
-            <div class="component-tab is-active">
-                <div class="wrapper-comp-settings is-active" id="masterclass-settings">
+<div class="wrapper-comp-settings is-active editor-with-buttons" id="masterclass-settings-tab">
                     <ul class="list-input settings-list">
                         {% for field, value, validator in fields %}
-                        <li class="field comp-setting-entry metadata_entry">
+                        <li class="field comp-setting-entry is-set">
                             <div class="wrapper-comp-setting">
                                 <label class="label setting-label"
                                        for="{{ field.name }}_input">{{ field.display_name }}</label>
@@ -21,8 +14,15 @@
                         </li>
                         {% endfor %}
                     </ul>
-                </div>
-            </div>
+        <div class="xblock-actions">
+            <ul>
+                <li class="action-item">
+                    <a href="#" class="button action-primary action-save">Save</a>
+                </li>
+
+                <li class="action-item">
+                    <a href="#" class="button action-cancel">Cancel</a>
+                </li>
+            </ul>
         </div>
-    </section>
 </div>

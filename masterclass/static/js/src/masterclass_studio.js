@@ -1,8 +1,8 @@
 /* Javascript for MasterclassXBlock. */
 
-function MasterclassXBlockStudio(runtime, element, server) {
+function MasterclassXBlockStudio(runtime, element) {
     var saveUrl = runtime.handlerUrl(element, 'save_masterclass');
-
+   
     var validators = {
         'number': function (x) {
             return Number(x);
@@ -15,24 +15,32 @@ function MasterclassXBlockStudio(runtime, element, server) {
         }
     }
 
-    function save() {
-        var view = this;
-        view.runtime.notify('save', {state: 'start'});
+    $(element).find('.action-cancel').bind('click', function() {
+      runtime.notify('cancel', {});
+    });    
+
+    $(element).find('.action-save').bind('click', function() {
+        runtime.notify('save', {state: 'start'});
 
         var data = {};
         $(element).find("input").each(function (index, input) {
             data[input.name] = input.value;
         });
 
-        $.ajax({
-            type: "POST",
-            url: saveUrl,
-            data: JSON.stringify(data),
-            success: function () {
-                view.runtime.notify('save', {state: 'end'});
-            }
+        $.post(saveUrl, JSON.stringify(data)).done(function(response) {
+            runtime.notify('save', {state: 'end'});
+            window.location.reload(false);
         });
-    }
+        
+        //$.ajax({
+        //    type: "POST",
+        //    url: saveUrl,
+        //    data: JSON.stringify(data),
+        //    success: function () {
+        //        runtime.notify('save', {state: 'end'});
+        //    }
+        //});
+    });
 
     return {
         save: save
