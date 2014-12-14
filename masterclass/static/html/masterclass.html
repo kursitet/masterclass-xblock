@@ -2,7 +2,7 @@
 <div class="masterclass_block" role="application">
     <h2 class="problem-header">{{display_name}}</h2>
 
-    <p>{% trans "Free places:" %}<span class="capacity">{{free}}/{{capacity}}</span></p>
+    <p>Свободных мест: <span class="capacity">{{free}}/{{capacity}}</span></p>
 
     {% if registrants_list %}
     <ul class="masterclass-student-list">
@@ -14,14 +14,14 @@
         {% endfor %}
     </ul>
 
-    <p><a href="" class="masterclass-get-csv-link">{% trans "List of registered students as CSV." %}</a></p>
+    <p><a href="" class="masterclass-get-csv-link">Список заявок в CSV.</a></p>
 
-    <p class="send-mail-button">{% trans "Send mail to registered students." %}</p>
+    <p class="send-mail-button">Отправить письмо зарегистрированным студентам.</p>
     <div class="send-mail-wrapper" style="display: none;">
-        <label class="label" for="email_subject">{% trans "Subject:" %}</label>
+        <label class="label" for="email_subject">Тема:</label>
         <input class="input" type="text" id="email_subject" name="email_subject"/>
         <textarea id="email_content" maxlength="10000"></textarea>
-        <button class="send-mail-submit">{%trans "Send mail" %}</button>
+        <button class="send-mail-submit">Отослать</button>
     </div>
 
     {% else %}

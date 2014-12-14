@@ -2,16 +2,16 @@
 <div class="masterclass_block_author" role="application">
     <h2 class="problem-header">{{display_name}}</h2>
 
-    <p>Free places: <span class="capacity">{{free}} out of {{capacity}}</span></p>
+    <p>Свободных мест: <span class="capacity">{{free}} из {{capacity}}</span></p>
 
     {% if test_required %}
-    <p>Completing the test with ID {{test_required}} is required to be eligible for registration.</p>
+    <p>Для регистрации требуется выполнить задание {{test_required}}</p>
     {% else %}
-    <p>No testing will be required to register for this master-class.</p>
+    <p>Для регистрации не требуется выполнение заданий.</p>
     {% endif %}
     {% if approval_required %}
-    <p>Course staff must manually approve all registrations.</p>
+    <p>Преподаватель должен одобрить каждую заявку.</p>
     {% else %}
-    <p>Registrations will be approved automatically.</p>
+    <p>Заявки одобрены по умолчанию..</p>
     {% endif %}
 </div>

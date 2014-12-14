@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 An XBlock that facilitates offline teacher-student gatherings.
 """
@@ -73,31 +74,31 @@ class MasterclassXBlock(XBlock):
     # Um. So how do I i18n those when I can't self._ ?
 
     display_name = String(
-        display_name="Display Name",
-        help="This name appears in the horizontal navigation at the top of the page.",
+        display_name=u"Имя модуля",
+        help=u"Это имя будет использовано в заголовке и в строках навигации",
         scope=Scope.settings,
-        default="Master-class registration"
+        default=u"Регистрация на мастер-класс"
     )
 
     capacity = Integer(
-        display_name="Venue capacity",
-        help="Maximum capacity of the venue the masterclass will be held in, a number of students.",
+        display_name=u"Количество свободных мест",
+        help=u"Максимальное количество свободных мест в месте проведения мастер-класса",
         default=30,
         scope=Scope.settings,
         values={"min": 1},
     )
 
     minimum_score = Integer(
-        display_name="Required test score",
-        help="If the master-class block has an attached problem, this is the score required for registering.",
+        display_name=u"Минимальная оценка за задание",
+        help=u"(в настоящий момент не работает) Если мастер-класс находится в одном юните с заданием, для регистрации на мастер-класс требуется такая оценка за это задание.",
         scope=Scope.settings,
         default=250,
         values={"min": 1},
     )
 
     approval_required = Boolean(
-        display_name="Manual approval",
-        help="Whether student registration requires manual approval.",
+        display_name=u"Регистрация требует подтверждения преподавателем",
+        help=u"1 - регистрация должна быть подтверждена преподавателем, 0 - нет",
         scope=Scope.settings,
         default=False
     )
@@ -105,30 +106,30 @@ class MasterclassXBlock(XBlock):
     # Student aggregate data.
 
     approved_registrations = List(
-        help="List of approved student registrations.",
+        help=u"Список зарегистрированных студентов.",
         scope=Scope.user_state_summary
     )
 
     pending_registrations = List(
-        help="List of pending student registrations.",
+        help=u"Список заявившихся студентов.",
         scope=Scope.user_state_summary
     )
 
     def registration_status_string(self, student_id):
         if student_id in self.approved_registrations:
-            return self._(u"You are registered for this master-class.")
+            return u"Вы зарегистрированы на этот мастер-класс."
         elif student_id in self.pending_registrations:
-            return self._(u"Your registration is waiting for staff approval.")
+            return u"Ваша заявка ожидает подтверждения преподавателем."
         elif len(self.approved_registrations) >= self.capacity:
-            return self._(u"There are no free spaces remaining to register for this master-class.")
+            return u"На мастер-классе закончились свободные места."
         elif self.is_registration_allowed():
-            return self._(u"You can register for this master-class.")
-        return self._(u"You need to complete the test to register for this master-class.")
+            return u"Вы можете зарегистрироваться на этот мастер-класс."
+        return u"Чтобы зарегистрироваться на этот мастер-класс вы должны выполнить задание."
 
     def registration_button_text(self, student_id):
         if student_id in self.approved_registrations or student_id in self.pending_registrations:
-            return self._(u"Unregister")
-        return self._(u"Register")
+            return u"Отказаться"
+        return u"Зарегистрироваться"
 
     def acquire_student_id(self):
         """
@@ -287,9 +288,9 @@ class MasterclassXBlock(XBlock):
         if student is not None and self.is_user_course_staff():
             registrants_list = []
             if self.approval_required:
-                button_text = self._(u"Unapprove")
+                button_text = u"Удалить заявку"
             else:
-                button_text = self._(u"Remove")
+                button_text = u"Удалить регистрацию"
             for that_student in self.approved_registrations:
                 registrants_list.append(
                     (that_student, self.acquire_student_name(that_student), self.acquire_student_email(that_student),
@@ -297,10 +298,9 @@ class MasterclassXBlock(XBlock):
             if self.approval_required:
                 for that_student in self.pending_registrations:
                     registrants_list.append(
-                        (
-                            that_student, self.acquire_student_name(that_student),
+                        (that_student, self.acquire_student_name(that_student),
                             self.acquire_student_email(that_student),
-                            self._(u"Approve")))
+                            u"Одобрить"))
             registrants_list.sort(key=lambda student: student[1])
 
         frag.add_content(self.render_template_from_string(html,
@@ -334,7 +334,7 @@ class MasterclassXBlock(XBlock):
             for field, validator in (
             (cls.display_name, 'string'),
             (cls.capacity, 'number'),
-            (cls.minimum_score, 'number'),
+            #(cls.minimum_score, 'number'),
             (cls.approval_required, 'boolean')
         ))
 
@@ -383,21 +383,20 @@ class MasterclassXBlock(XBlock):
             if self.approval_required:
                 self.approved_registrations.remove(student)
                 self.pending_registrations.append(student)
-                new_button_text = self._(u"Remove")
+                new_button_text = u"Удалить"
             else:
                 self.approved_registrations.remove(student)
-                new_button_text = self._(u"Register")
+                new_button_text = u"Зарегистрировать"
         elif student in self.pending_registrations:
             if self.approval_required:
                 self.pending_registrations.remove(student)
                 self.approved_registrations.append(student)
                 # For the moment that will suffice, I need to test the whole email mechanism first...
-                self.send_email_to_student([student], self._(u"Your master-class registration."),
-                                           self._(
-                                               u"Your master-class registration to {course_name} - {parent_name} has been approved.").format(
+                self.send_email_to_student([student], u"О вашей регистрации на мастер-класс.",
+                                               u"Ваша заявка на мастер-класс {course_name} - {parent_name} была одобрена.".format(
                                                course_name=self.acquire_course_name(),
                                                parent_name=self.acquire_parent_name()))
-                new_button_text = self._(u"Unapprove")
+                new_button_text = u"Снять регистрацию"
             else:
                 # This branch shouldn't happen.
                 # If approval isn't required, the list should be empty,
@@ -406,10 +405,10 @@ class MasterclassXBlock(XBlock):
         else:
             if self.approval_required:
                 self.pending_registrations.append(student)
-                new_button_text = self._(u"Approve")
+                new_button_text = u"Одобрить"
             else:
                 self.approved_registrations.append(student)
-                new_button_text = self._(u"Remove")
+                new_button_text = u"Удалить"
 
         return {'button_text': new_button_text,
                 'student_id': student}
@@ -484,29 +483,29 @@ class MasterclassXBlock(XBlock):
         student = self.acquire_student_id()
 
         if student is None:
-            return {'registration_status': self._(u"Registration button does not work in Studio."),
-                    "button_text": self._(u"Register")}
+            return {'registration_status': u"Кнопка регистрации не работает в Студии и не должна.",
+                    "button_text": u"Зарегистрироваться"}
 
         if student in self.pending_registrations:
             self.pending_registrations.remove(student)
-            result_message = self._(u"You are no longer requesting to be registered for this master-class.")
+            result_message = u"Вы сняли заявку на участие в этом мастер-классе."
         elif student in self.approved_registrations:
             self.approved_registrations.remove(student)
-            result_message = self._(u"You are no longer registered for this master-class.")
+            result_message = u"Вы сняли регистрацию на участие в этом мастер-классе."
         else:
             if (self.capacity - len(self.approved_registrations)) > 0:
                 if self.is_registration_allowed_by_test():
                     if self.approval_required:
                         self.pending_registrations.append(student)
-                        result_message = self._(u"Your request for registration is now waiting for staff approval.")
+                        result_message = u"Ваша заявка на участие ожидает одобрения преподавателем."
                     else:
                         self.approved_registrations.append(student)
-                        result_message = self._(u"You have been successfully registered.")
+                        result_message = u"Вы были успешно зарегистрированы."
 
                 else:
-                    result_message = self._(u"You have to score highly enough on the test to register.")
+                    result_message = u"Для регистрации, вы должны получить достаточно высокую оценку за прилагаемое тестовое задание."
             else:
-                result_message = self._(u"There are no free spots remaining, sorry.")
+                result_message = u"Свободных мест больше нет, извините."
 
         return {'registration_status': result_message,
                 "button_text": self.registration_button_text(student)}
