@@ -263,7 +263,9 @@ class MasterclassXBlock(XBlock):
             # There's no reason to check anything else if we're over capacity.
             return False
         # Otherwise, it is determined by the existence of a test.
-        return self.is_registration_allowed_by_test()
+        # TODO: Since this particular function is well and truly broken right now, return true
+        return True
+        # return self.is_registration_allowed_by_test()
 
 
     def student_view(self, context=None):
