@@ -132,6 +132,10 @@ class MasterclassXBlock(XBlock):
         user = User.objects.get(id=student_id)
         return user.email
 
+    def acquire_student_username(self, student_id):
+        user = User.objects.get(id=student_id)
+        return user.username
+
     def acquire_course_name(self):
         return CourseData.get_course(self.course_id).display_name_with_default
 
