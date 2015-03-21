@@ -2,7 +2,7 @@
 <div class="masterclass_block" role="application">
     <h2 class="problem-header">{{display_name}}</h2>
 
-    <p>Свободных мест: <span class="capacity">{{free}}/{{capacity}}</span></p>
+    <p>Свободных мест: <span class="capacity">{{free}} из {{capacity}}</span></p>
 
     {% if is_course_staff %}
     {% if pending_registrants %}
@@ -12,9 +12,11 @@
     <ul class="masterclass-student-list">
         {% for student_data in pending_registrants %}
         <li class="student">{{student_data.name}} ({{student_data.email}})
+            {% if free > 0 %}
             <button class="student_approval_button masterclass-button" data-student="{{student_data.id}}">
                 Одобрить
             </button>
+            {% endif %}
         </li>
         {% endfor %}
     </ul>

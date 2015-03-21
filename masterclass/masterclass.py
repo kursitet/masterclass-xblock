@@ -82,8 +82,8 @@ class MasterclassXBlock(XBlock):
     )
 
     approval_required = Boolean(
-        display_name=u"Регистрация требует подтверждения преподавателем",
-        help=u"1/True - регистрация должна быть подтверждена преподавателем, 0/False - нет",
+        display_name=u"Регистрация требует одобрения преподавателем",
+        help=u"1/True - регистрация должна быть одобрена преподавателем, 0/False - нет",
         scope=Scope.settings,
         default=False
     )
@@ -109,7 +109,7 @@ class MasterclassXBlock(XBlock):
         if student_id in self.approved_registrations:
             return u"Вы зарегистрированы на этот мастер-класс."
         elif student_id in self.pending_registrations:
-            return u"Ваша заявка ожидает подтверждения преподавателем."
+            return u"Ваша заявка ожидает одобрения преподавателем."
         return u"Вы можете зарегистрироваться на этот мастер-класс."
 
     def registration_button_text(self, student_id):
