@@ -376,6 +376,7 @@ class MasterclassXBlock(XBlock):
                 charset='utf8',
                 body=output_string,
                 content_type="text/csv",
+                content_length=len(output_string),
                 content_disposition="attachment; filename*=UTF-8''{0}".format(iri_to_uri(filename))
             )
 
