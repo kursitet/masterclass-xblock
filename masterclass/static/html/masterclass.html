@@ -5,28 +5,54 @@
     <p>Свободных мест: <span class="capacity">{{free}}/{{capacity}}</span></p>
 
     {% if is_course_staff %}
-        {% if registrants_list %}
-            <p>Список слушателей подавших заявку:</p>
-            <ul class="masterclass-student-list">
-                {% for student_id, name, email, button_text in registrants_list %}
-                <li class="student">{{name}} ({{email}})
-                    <button class="student_approval_button masterclass-button" data-student="{{student_id}}">{{button_text}}
-                    </button>
-                </li>
-                {% endfor %}
-            </ul>
+    {% if pending_registrants %}
+    <p>Список заявок слушателей на участие требующих рассмотрения:</p>
 
-            <p><a href="" class="masterclass-get-csv-link">Список заявок в CSV.</a></p>
+    <p class="masterclass-warning">Внимание! Одобрив заявку, вы не сможете снять одобрение обратно!</p>
+    <ul class="masterclass-student-list">
+        {% for student_data in pending_registrants %}
+        <li class="student">{{student_data.name}} ({{student_data.email}})
+            <button class="student_approval_button masterclass-button" data-student="{{student_data.id}}">
+                Одобрить
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% if approved_registrants %}
+    {% if approval_required %}
+    <p>Список одобренных заявок:</p>
+    {% else %}
+    <p>Список зарегистрированных слушателей:</p>
+    {% endif %}
+    <ul class="masterclass-student-list">
+        {% for student_data in approved_registrants %}
+        <li class="student">{{student_data.name}} ({{student_data.email}})
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% if cancelled_registrants %}
+    <p>Список слушателей, отменивших свои заявки:</p>
+    <ul class="masterclass-student-list">
+        {% for student_data in cancelled_registrants %}
+        <li class="student">{{student_data.name}} ({{student_data.email}})</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
 
-            <p class="send-mail-button">Отправить письмо зарегистрированным студентам.</p>
+    {% if approved_registrants %}
+    <p><a href="" class="masterclass-get-csv-link">Список участников мастеркласса в CSV.</a></p>
 
-            <div class="send-mail-wrapper" style="display: none;">
-                <label class="label" for="email_subject">Тема:</label>
-                <input class="input" type="text" id="email_subject" name="email_subject"/>
-                <textarea id="email_content" maxlength="10000"></textarea>
-                <button class="send-mail-submit">Отослать</button>
-            </div>
-        {% endif %}
+    <p class="send-mail-button">Отправить письмо зарегистрированным участникам.</p>
+
+    <div class="send-mail-wrapper" style="display: none;">
+        <label class="label" for="email_subject">Тема:</label>
+        <input class="input" type="text" id="email_subject" name="email_subject"/>
+        <textarea id="email_content" maxlength="10000"></textarea>
+        <button class="send-mail-submit">Отослать</button>
+    </div>
+    {% endif %}
     {% else %}
     <p class="registration_status">{{status_string}}</p>
 

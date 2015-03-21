@@ -54,3 +54,7 @@ textarea#email_content {
     color: #fff;
     font-weight: 600;
 }
+
+.masterclass-warning {
+    color: red;
+}

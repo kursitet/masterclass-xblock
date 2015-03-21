@@ -19,7 +19,11 @@ function MasterclassXBlock(runtime, element) {
     });
 
     function updateStudents(result) {
-        $(element).find('.student_approval_button[data-student="' + result.student_id + '"]').text(result.button_text)
+        if (result.remaining_capacity > 0) {
+            $(element).find('.student_approval_button[data-student="' + result.student_id + '"]').remove();
+        } else {
+            $(element).find('.student_approval_button').remove();
+        }
     }
 
     $(element).find('.student_approval_button').bind('click', function () {
