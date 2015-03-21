@@ -12,6 +12,8 @@ from xblock.fragment import Fragment
 from django.template import Context as DjangoContext
 from django.template import Template as DjangoTemplate
 from django.utils.encoding import iri_to_uri
+from django.utils.dateparse import parse_date
+from django.utils.timezone import now
 
 # Yeah, yeah.
 from django.contrib.auth.models import User
@@ -88,6 +90,13 @@ class MasterclassXBlock(XBlock):
         default=False
     )
 
+    last_day = String(
+        display_name=u"Последний день регистрации",
+        help=u"Последний день, в который будут приниматься новые заявки на участие, в формате ГГГГ-ММ-ДД",
+        scope=Scope.settings,
+        default=u""
+    )
+
     # Student aggregate data.
 
     approved_registrations = List(
@@ -105,11 +114,33 @@ class MasterclassXBlock(XBlock):
         scope=Scope.user_state_summary
     )
 
+    @property
+    def free_capacity(self):
+        fc = self.capacity - len(self.approved_registrations)
+        return fc if fc > 0 else 0
+
+    def get_last_day(self, date_string):
+        try:
+            last_day = parse_date(date_string)
+        except ValueError:
+            return None
+        return last_day
+
+    def has_ended(self):
+        if self.last_day:
+            last_day = self.get_last_day(self.last_day)
+            if last_day:
+                if now().date() > last_day:
+                    return True
+        return False
+
     def registration_status_string(self, student_id):
         if student_id in self.approved_registrations:
             return u"Вы зарегистрированы на этот мастер-класс."
         elif student_id in self.pending_registrations:
             return u"Ваша заявка ожидает одобрения преподавателем."
+        if self.has_ended():
+            return u"Прием заявок окончен."
         return u"Вы можете зарегистрироваться на этот мастер-класс."
 
     def registration_button_text(self, student_id):
@@ -214,16 +245,16 @@ class MasterclassXBlock(XBlock):
             if self.approval_required:
                 pending_registrants_list = [_student_record(x) for x in self.pending_registrations]
 
-        free_capacity = self.capacity - len(self.approved_registrations)
-
         frag.add_content(
             self.render_template_from_string(
                 html,
                 display_name=self.display_name,
                 capacity=self.capacity,
+                last_day=self.get_last_day(self.last_day),
+                has_ended=self.has_ended(),
                 approval_required=self.approval_required,
                 is_course_staff=self.is_user_course_staff(),
-                free=free_capacity if free_capacity > 0 else 0,
+                free=self.free_capacity,
                 button_text=self.registration_button_text(student),
                 approved_registrants=sorted(approved_registrants_list, key=itemgetter('email')),
                 pending_registrants=sorted(pending_registrants_list, key=itemgetter('email')),
@@ -254,7 +285,8 @@ class MasterclassXBlock(XBlock):
             for field, validator in (
                 (cls.display_name, 'string'),
                 (cls.capacity, 'number'),
-                (cls.approval_required, 'boolean')
+                (cls.approval_required, 'boolean'),
+                (cls.last_day, 'date_string'),
             ))
 
         html = self.resource_string('static/html/masterclass_studio.html')
@@ -280,7 +312,7 @@ class MasterclassXBlock(XBlock):
                                                               approval_required=self.approval_required,
                                                               display_name=self.display_name,
                                                               capacity=self.capacity,
-                                                              free=self.capacity - len(self.approved_registrations)))
+                                                              free=self.free_capacity))
         return fragment
 
     @XBlock.json_handler
@@ -299,8 +331,7 @@ class MasterclassXBlock(XBlock):
                                        u"Ваша заявка на мастер-класс {course_name} - {parent_name} была одобрена.".format(
                                            course_name=self.acquire_course_name(),
                                            parent_name=self.acquire_parent_name()))
-            free_capacity = self.capacity - len(self.approved_registrations)
-            return {'student_id': student, 'remaining_capacity': free_capacity}
+            return {'student_id': student, 'capacity': self.capacity, 'free_places': self.free_capacity}
         else:
             # Shouldn't happen.
             raise
@@ -393,16 +424,23 @@ class MasterclassXBlock(XBlock):
                 self.approved_registrations.append(student)
                 result_message = u"Вы были успешно зарегистрированы."
 
-        return {'registration_status': result_message,
-                "button_text": self.registration_button_text(student)}
+        return {
+            'registration_status': result_message,
+            "button_text": self.registration_button_text(student),
+            'capacity': self.capacity,
+            'free_places': self.free_capacity,
+        }
 
     @XBlock.json_handler
     def save_masterclass(self, data, suffix=''):
         """Save settings in Studio"""
         for name in ['display_name', 'capacity']:
             setattr(self, name, data.get(name, getattr(self, name)))
-        if data.get('approval_required').lower() in ["true", "yes", "1"]:
+        if data.get('approval_required', '').lower() in ["true", "yes", "1"]:
             self.approval_required = True
         else:
             self.approval_required = False
+        if self.get_last_day(data.get('last_day', '')):
+            self.last_day = data.get('last_day', '')
+
 
