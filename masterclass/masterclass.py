@@ -375,7 +375,7 @@ class MasterclassXBlock(XBlock):
             return Response(
                 body=output_string,
                 content_type="text/csv",
-                content_length=len(output_string),
+                cache_control="no-cache",
                 content_disposition="attachment; filename*=UTF-8''{0}".format(iri_to_uri(filename))
             )
 
