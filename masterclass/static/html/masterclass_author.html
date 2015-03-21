@@ -4,11 +4,6 @@
 
     <p>Свободных мест: <span class="capacity">{{free}} из {{capacity}}</span></p>
 
-    {% if test_required %}
-    <p>Для регистрации требуется выполнить задание {{test_required}}</p>
-    {% else %}
-    <p>Для регистрации не требуется выполнение заданий.</p>
-    {% endif %}
     {% if approval_required %}
     <p>Преподаватель должен одобрить каждую заявку.</p>
     {% else %}

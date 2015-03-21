@@ -4,26 +4,29 @@
 
     <p>Свободных мест: <span class="capacity">{{free}}/{{capacity}}</span></p>
 
-    {% if registrants_list %}
-    <ul class="masterclass-student-list">
-        {% for student_id, name, email, button_text in registrants_list %}
-        <li class="student">{{name}} ({{email}})
-            <button class="student_approval_button masterclass-button" data-student="{{student_id}}">{{button_text}}
-            </button>
-        </li>
-        {% endfor %}
-    </ul>
+    {% if is_course_staff %}
+        {% if registrants_list %}
+            <p>Список слушателей подавших заявку:</p>
+            <ul class="masterclass-student-list">
+                {% for student_id, name, email, button_text in registrants_list %}
+                <li class="student">{{name}} ({{email}})
+                    <button class="student_approval_button masterclass-button" data-student="{{student_id}}">{{button_text}}
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
 
-    <p><a href="" class="masterclass-get-csv-link">Список заявок в CSV.</a></p>
+            <p><a href="" class="masterclass-get-csv-link" download>Список заявок в CSV.</a></p>
 
-    <p class="send-mail-button">Отправить письмо зарегистрированным студентам.</p>
-    <div class="send-mail-wrapper" style="display: none;">
-        <label class="label" for="email_subject">Тема:</label>
-        <input class="input" type="text" id="email_subject" name="email_subject"/>
-        <textarea id="email_content" maxlength="10000"></textarea>
-        <button class="send-mail-submit">Отослать</button>
-    </div>
+            <p class="send-mail-button">Отправить письмо зарегистрированным студентам.</p>
 
+            <div class="send-mail-wrapper" style="display: none;">
+                <label class="label" for="email_subject">Тема:</label>
+                <input class="input" type="text" id="email_subject" name="email_subject"/>
+                <textarea id="email_content" maxlength="10000"></textarea>
+                <button class="send-mail-submit">Отослать</button>
+            </div>
+        {% endif %}
     {% else %}
     <p class="registration_status">{{status_string}}</p>
 
@@ -32,5 +35,7 @@
             <span class="register_button show-label">{{button_text}}</span>
         </button>
     </div>
+
     {% endif %}
+
 </div>

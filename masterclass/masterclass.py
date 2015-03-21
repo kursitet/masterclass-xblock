@@ -11,11 +11,10 @@ from xblock.fragment import Fragment
 
 from django.template import Context as DjangoContext
 from django.template import Template as DjangoTemplate
+from django.utils.encoding import iri_to_uri
 
 # Yeah, yeah.
 from django.contrib.auth.models import User
-
-from xmodule.exceptions import UndefinedContext
 
 # And here we reach even deeper into the guts of edX
 try:
@@ -37,14 +36,12 @@ import unicodecsv
 
 from webob.response import Response
 
-import urllib
-
 import logging
 
 log = logging.getLogger(__name__)
 
 
-@XBlock.needs("i18n")
+@XBlock.needs("user")
 class MasterclassXBlock(XBlock):
     """
     An XBlock that contains functionality for
@@ -52,11 +49,6 @@ class MasterclassXBlock(XBlock):
     between teachers and students, with accompanying invitations,
     participant counts, etc.
     """
-
-    @property
-    def _(self):
-        i18nService = self.runtime.service(self, 'i18n')
-        return i18nService.ugettext
 
     @staticmethod
     def render_template_from_string(template_string, **kwargs):
@@ -88,17 +80,9 @@ class MasterclassXBlock(XBlock):
         values={"min": 1},
     )
 
-    minimum_score = Integer(
-        display_name=u"Минимальная оценка за задание",
-        help=u"(в настоящий момент не работает) Если мастер-класс находится в одном юните с заданием, для регистрации на мастер-класс требуется такая оценка за это задание.",
-        scope=Scope.settings,
-        default=250,
-        values={"min": 1},
-    )
-
     approval_required = Boolean(
         display_name=u"Регистрация требует подтверждения преподавателем",
-        help=u"1 - регистрация должна быть подтверждена преподавателем, 0 - нет",
+        help=u"1/True - регистрация должна быть подтверждена преподавателем, 0/False - нет",
         scope=Scope.settings,
         default=False
     )
@@ -122,9 +106,7 @@ class MasterclassXBlock(XBlock):
             return u"Ваша заявка ожидает подтверждения преподавателем."
         elif len(self.approved_registrations) >= self.capacity:
             return u"На мастер-классе закончились свободные места."
-        elif self.is_registration_allowed():
-            return u"Вы можете зарегистрироваться на этот мастер-класс."
-        return u"Чтобы зарегистрироваться на этот мастер-класс вы должны выполнить задание."
+        return u"Вы можете зарегистрироваться на этот мастер-класс."
 
     def registration_button_text(self, student_id):
         if student_id in self.approved_registrations or student_id in self.pending_registrations:
@@ -133,12 +115,13 @@ class MasterclassXBlock(XBlock):
 
     def acquire_student_id(self):
         """
-        This is a wrapper function to abstract away the api-breaking fact that I can't know who the user is.
-        """
-        try:
-            return self.xmodule_runtime.get_real_user(self.xmodule_runtime.anonymous_student_id).id
-        except TypeError:
-            return None
+        Get the user ID through the user service. Then use the user ID directly for the moment because I don't
+        have the time for the rest"""
+        user_service = self.runtime.service(self, "user")
+        xblock_user = user_service.get_current_user()
+        if xblock_user is not None:
+            return xblock_user.opt_attrs.get('edx-platform.user_id', None)
+        return None
 
 
     def acquire_student_name(self, student_id):
@@ -178,7 +161,7 @@ class MasterclassXBlock(XBlock):
         context = get_email_context(CourseData.get_course(self.course_id))
         from_address = get_source_address(self.course_id, self.acquire_course_name())
 
-        for student_id in receivers:
+        for student_id in list(set(receivers)):
             context['email'] = self.acquire_student_email(student_id)
             context['name'] = self.acquire_student_name(student_id)
 
@@ -194,80 +177,6 @@ class MasterclassXBlock(XBlock):
         connection.send_messages(emails)
 
         return
-
-    def get_peer_blocks(self):
-        # Technically, I should be able to only do this in studio view,
-        # and save the location of the actual test or tests... but that can wait,
-        # and also has potential problems like "so how do we force it to recalculate".
-
-        try:
-            # For some curious reason, get_parent() currently returns none.
-            # Could it be it does not refer to XModule parents?
-            peers = [self.runtime.get_block(child_name) for child_name in self.get_parent().children]
-        except AttributeError:
-            # So we dig through the location tree instead.
-            return self.get_parent().get_children()
-            # parent_location = self.runtime.modulestore.get_parent_location(self.location)
-            # peers = self.runtime.get_block(parent_location).get_children()
-
-        return peers
-
-    def is_registration_allowed_by_test(self):
-        """
-        Determine if a test is required to join this masterclass.
-        We're assuming that this is the fact when the masterclass has any peers,
-        i.e. modules with the same location parent as itself, which
-        return a score. For the moment only the first block found that does is counted as relevant.
-
-        """
-
-        peers = self.get_peer_blocks()
-
-        # Now that we have a list of peers, walk it and see if any of them are problems.
-        for peer in peers:
-            if peer is self:
-                continue
-            if peer.has_score:
-                # Now, this will work only if the runtime is defined,
-                # and when the user has a score on this module...
-                try:
-                    # I'm pretty this is outside the bounds of the API.
-                    # By this point I'm not sure what IS the API though.
-
-                    # It is supremely bizarre, but the first time you get_score(), you always get a zero.
-                    scoredata = self.xmodule_runtime.get_module(peer).get_score()
-
-                    # The second time returns correct data, however.
-                    # There's got to be a race condition somewhere, but I'm not up to finding it right now.
-                    problem_score = self.xmodule_runtime.get_module(peer).get_score()['score']
-
-
-                    # If the problem score condition is satisfied, registration is allowed by test.
-                    log.warning("Problem score: {0}, required score: {1}".format(problem_score, self.minimum_score))
-                    return problem_score >= self.minimum_score
-                except AttributeError:
-                    # We get an AttributeError if the score is None.
-                    log.warning("Somehow, score returned was none.")
-                except UndefinedContext:
-                    # We get an UndefinedContext when in Studio, where, apparently,
-                    # it does not yet exist during initial page rendering.
-                    log.error("Context was undefined. It should not happen, so if it did, there's a problem.")
-                # If we can't get the score, but we know a problem exists, registration is not allowed.
-
-                return False
-
-        # If we didn't find any peers with a score, registration is allowed by test.
-        return True
-
-    def is_registration_allowed(self):
-        if (self.capacity - len(self.approved_registrations)) <= 0:
-            # There's no reason to check anything else if we're over capacity.
-            return False
-        # Otherwise, it is determined by the existence of a test.
-        # TODO: Since this particular function is well and truly broken right now, return true
-        return True
-        # return self.is_registration_allowed_by_test()
-
 
     def student_view(self, context=None):
         """
@@ -285,7 +194,7 @@ class MasterclassXBlock(XBlock):
 
         registrants_list = None
 
-        if student is not None and self.is_user_course_staff():
+        if self.is_user_course_staff():
             registrants_list = []
             if self.approval_required:
                 button_text = u"Удалить"
@@ -299,18 +208,19 @@ class MasterclassXBlock(XBlock):
                 for that_student in self.pending_registrations:
                     registrants_list.append(
                         (that_student, self.acquire_student_name(that_student),
-                            self.acquire_student_email(that_student),
-                            u"Одобрить"))
+                         self.acquire_student_email(that_student),
+                         u"Одобрить"))
             registrants_list.sort(key=lambda student: student[1])
 
         frag.add_content(self.render_template_from_string(html,
                                                           display_name=self.display_name,
                                                           capacity=self.capacity,
+                                                          is_course_staff=self.is_user_course_staff(),
                                                           free=self.capacity - len(self.approved_registrations),
                                                           button_text=self.registration_button_text(student),
                                                           registrants_list=registrants_list,
                                                           status_string=self.registration_status_string(student),
-        ))
+                                                          ))
 
         frag.initialize_js('MasterclassXBlock')
         return frag
@@ -332,11 +242,10 @@ class MasterclassXBlock(XBlock):
         edit_fields = (
             (field, none_to_empty(getattr(self, field.name)), validator)
             for field, validator in (
-            (cls.display_name, 'string'),
-            (cls.capacity, 'number'),
-            #(cls.minimum_score, 'number'),
-            (cls.approval_required, 'boolean')
-        ))
+                (cls.display_name, 'string'),
+                (cls.capacity, 'number'),
+                (cls.approval_required, 'boolean')
+            ))
 
         html = self.resource_string('static/html/masterclass_studio.html')
         fragment = Fragment()
@@ -354,17 +263,10 @@ class MasterclassXBlock(XBlock):
         It's not like there's a point in seeing the register button there anyway.
         """
 
-        test_required = None
-        for peer in self.get_peer_blocks():
-            if peer.has_score:
-                test_required = peer.location
-                break
-
         html = self.resource_string('static/html/masterclass_author.html')
         fragment = Fragment()
         fragment.add_css(self.resource_string("static/css/masterclass.css"))
         fragment.add_content(self.render_template_from_string(html,
-                                                              test_required=test_required,
                                                               approval_required=self.approval_required,
                                                               display_name=self.display_name,
                                                               capacity=self.capacity,
@@ -393,7 +295,7 @@ class MasterclassXBlock(XBlock):
                 self.approved_registrations.append(student)
                 # For the moment that will suffice, I need to test the whole email mechanism first...
                 self.send_email_to_student([student], u"О вашей регистрации на мастер-класс.",
-                                               u"Ваша заявка на мастер-класс {course_name} - {parent_name} была одобрена.".format(
+                                           u"Ваша заявка на мастер-класс {course_name} - {parent_name} была одобрена.".format(
                                                course_name=self.acquire_course_name(),
                                                parent_name=self.acquire_parent_name()))
                 new_button_text = u"Снять регистрацию"
@@ -452,11 +354,7 @@ class MasterclassXBlock(XBlock):
                 charset='utf8',
                 body=output_string,
                 content_type="text/csv",
-                # Note: See https://stackoverflow.com/questions/93551/how-to-encode-the-filename-parameter-of-content-disposition-header-in-http
-                # This is going to be a problem further on as well.
-                # This variation seems to work reliably in Chrome, but no clue on other places, will
-                # need testing...
-                content_disposition="attachment; filename=" + urllib.quote(filename.encode('utf8'))
+                content_disposition="attachment; filename*=UTF-8''{0}".format(iri_to_uri(filename))
             )
 
     @XBlock.json_handler
