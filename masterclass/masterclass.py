@@ -432,6 +432,23 @@ class MasterclassXBlock(XBlock):
         }
 
     @XBlock.json_handler
+    def refresh_display(self, data, suffix=''):
+        student = self.acquire_student_id()
+
+        if student is None:
+            result_message = u"Кнопка регистрации не работает в Студии и не должна."
+            button_text = u"Зарегистрироваться"
+        else:
+            result_message = self.registration_status_string(student)
+            button_text = self.registration_button_text(student)
+        return {
+            'registration_status': result_message,
+            "button_text": button_text,
+            'capacity': self.capacity,
+            'free_places': self.free_capacity,
+        }
+
+    @XBlock.json_handler
     def save_masterclass(self, data, suffix=''):
         """Save settings in Studio"""
         for name in ['display_name', 'capacity']:

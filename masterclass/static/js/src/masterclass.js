@@ -3,6 +3,13 @@ function MasterclassXBlock(runtime, element) {
 
     $(element).find('.masterclass-get-csv-link').attr('href', runtime.handlerUrl(element, 'get_csv'));
 
+    $.ajax({
+        type: "POST",
+        url: runtime.handlerUrl(element, 'refresh_display'),
+        data: JSON.stringify({"display_refreshed": "True"}),
+        success: updateStatus
+    });
+
     function updateStatus(result) {
         $('.registration_status', element).text(result.registration_status);
         $('.register_button', element).text(result.button_text);
