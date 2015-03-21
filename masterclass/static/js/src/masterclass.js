@@ -47,11 +47,11 @@ function MasterclassXBlock(runtime, element) {
     });
 
     $(element).find('.send-mail-button').bind('click', function () {
-        $(element).find('.send-mail-wrapper').toggle();
+        $(element).find('.send-mail-wrapper').slideToggle();
     });
 
     function mailSent(result) {
-        $(element).find('.send-mail-wrapper').toggle();
+        $(element).find('.send-mail-wrapper').slideToggle();
         $(element).find('input#email_subject').val('');
         $(element).find('textarea#email_content').val('');
     }
