@@ -2,7 +2,7 @@
 <div class="masterclass_block" role="application">
     <h2 class="problem-header">{{display_name}}</h2>
 
-    <p>Свободных мест: <span class="capacity">{{free}} / {{capacity}}</span></p>
+    <p>Свободных мест: <span class="capacity"></span></p>
     {% if last_day %}
     <p>Заявки принимаются до {{last_day|date:"d E Y"}} года включительно.</p>
     {% endif %}
@@ -59,12 +59,12 @@
     </div>
     {% endif %}
     {% else %}
-    <p class="registration_status">{{status_string}}</p>
+    <p class="registration_status"></p>
 
     {% if not has_ended %}
     <div class="action">
         <button class="show">
-            <span class="register_button show-label">{{button_text}}</span>
+            <span class="register_button show-label"></span>
         </button>
     </div>
     {% endif %}
