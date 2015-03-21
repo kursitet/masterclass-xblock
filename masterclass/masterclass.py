@@ -407,7 +407,7 @@ class MasterclassXBlock(XBlock):
     @XBlock.json_handler
     def save_masterclass(self, data, suffix=''):
         """Save settings in Studio"""
-        for name in ('display_name', 'capacity', 'minimum_score'):
+        for name in ['display_name', 'capacity']:
             setattr(self, name, data.get(name, getattr(self, name)))
         if data.get('approval_required').lower() in ["true", "yes", "1"]:
             self.approval_required = True
