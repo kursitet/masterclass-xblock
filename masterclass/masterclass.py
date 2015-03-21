@@ -31,7 +31,7 @@ except:
 
 from django.core import mail
 
-import StringIO, codecs, contextlib
+import codecs, io
 import unicodecsv
 
 from webob.response import Response
@@ -329,13 +329,14 @@ class MasterclassXBlock(XBlock):
         for student in self.approved_registrations:
             results.append(
                 {
+                    "username": self.acquire_student_username(student),
                     "email": self.acquire_student_email(student),
                     "name": self.acquire_student_name(student),
                 }
             )
 
         if len(results):
-            with contextlib.closing(StringIO.StringIO()) as handle:
+            with io.BytesIO() as handle:
                 writer = unicodecsv.DictWriter(handle, results[0].keys(), encoding='utf-8',
                                                dialect=unicodecsv.excel)
                 writer.writeheader()
