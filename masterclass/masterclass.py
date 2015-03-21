@@ -373,7 +373,6 @@ class MasterclassXBlock(XBlock):
                 output_string = codecs.BOM_UTF8 + handle.getvalue()
 
             return Response(
-                charset='utf8',
                 body=output_string,
                 content_type="text/csv",
                 content_length=len(output_string),
