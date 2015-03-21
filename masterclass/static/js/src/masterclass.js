@@ -13,7 +13,7 @@ function MasterclassXBlock(runtime, element) {
     function updateStatus(result) {
         $('.registration_status', element).text(result.registration_status);
         $('.register_button', element).text(result.button_text);
-        $('.capacity', element).text(result.free_places + "/" + result.capacity);
+        $('.capacity', element).text(result.free_places + " / " + result.capacity);
     }
 
     $(element).find('.register_button').bind('click', function () {
@@ -32,7 +32,7 @@ function MasterclassXBlock(runtime, element) {
         } else {
             $(element).find('.student_approval_button').remove();
         }
-        $(element).find('.capacity').text(result.free_places + "/" + result.capacity);
+        $(element).find('.capacity').text(result.free_places + " / " + result.capacity);
     }
 
     $(element).find('.student_approval_button').bind('click', function () {
