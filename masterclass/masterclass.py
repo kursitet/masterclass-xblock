@@ -224,6 +224,7 @@ class MasterclassXBlock(XBlock):
                 'id': student,
                 'name': self.acquire_student_name(student),
                 'email': self.acquire_student_email(student),
+                'last_name': self.acquire_student_name(student).split()[-1],
             }
 
         student = self.acquire_student_id()
@@ -256,9 +257,9 @@ class MasterclassXBlock(XBlock):
                 is_course_staff=self.is_user_course_staff(),
                 free=self.free_capacity,
                 button_text=self.registration_button_text(student),
-                approved_registrants=sorted(approved_registrants_list, key=itemgetter('email')),
-                pending_registrants=sorted(pending_registrants_list, key=itemgetter('email')),
-                cancelled_registrants=sorted(cancelled_registrants_list, key=itemgetter('email')),
+                approved_registrants=sorted(approved_registrants_list, key=itemgetter('last_name')),
+                pending_registrants=sorted(pending_registrants_list, key=itemgetter('last_name')),
+                cancelled_registrants=sorted(cancelled_registrants_list, key=itemgetter('last_name')),
                 status_string=self.registration_status_string(student),
             )
         )
