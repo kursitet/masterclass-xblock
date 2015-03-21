@@ -388,16 +388,12 @@ class MasterclassXBlock(XBlock):
             result_message = u"Вы сняли регистрацию на участие в этом мастер-классе."
         else:
             if (self.capacity - len(self.approved_registrations)) > 0:
-                if self.is_registration_allowed_by_test():
-                    if self.approval_required:
-                        self.pending_registrations.append(student)
-                        result_message = u"Ваша заявка на участие ожидает одобрения преподавателем."
-                    else:
-                        self.approved_registrations.append(student)
-                        result_message = u"Вы были успешно зарегистрированы."
-
+                if self.approval_required:
+                    self.pending_registrations.append(student)
+                    result_message = u"Ваша заявка на участие ожидает одобрения преподавателем."
                 else:
-                    result_message = u"Для регистрации, вы должны получить достаточно высокую оценку за прилагаемое тестовое задание."
+                    self.approved_registrations.append(student)
+                    result_message = u"Вы были успешно зарегистрированы."
             else:
                 result_message = u"Свободных мест больше нет, извините."
 
