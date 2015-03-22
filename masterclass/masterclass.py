@@ -117,11 +117,11 @@ class MasterclassXBlock(XBlock):
     def enlist(self, var, student):
         """I'm not sure how these List() objects will handle assigning to them, so here's this shorthand."""
         if student not in var:
-            student.append(var)
+            var.append(student)
 
     def delist(self, var, student):
         if student in var:
-            student.remove(var)
+            var.remove(student)
 
     def free_capacity(self):
         fc = self.capacity - len(self.approved_registrations)
