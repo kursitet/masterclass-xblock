@@ -27,12 +27,14 @@ function MasterclassXBlock(runtime, element) {
     });
 
     function updateStudents(result) {
-        if (result.free_places > 0) {
+        window.location.reload();
+
+        /*if (result.free_places > 0) {
             $(element).find('.student_approval_button[data-student="' + result.student_id + '"]').remove();
         } else {
             $(element).find('.student_approval_button').remove();
         }
-        $(element).find('.capacity').text(result.free_places + " / " + result.capacity);
+        $(element).find('.capacity').text(result.free_places + " / " + result.capacity);*/
     }
 
     $(element).find('.student_approval_button').bind('click', function () {

@@ -114,7 +114,15 @@ class MasterclassXBlock(XBlock):
         scope=Scope.user_state_summary
     )
 
-    @property
+    def enlist(self, var, student):
+        """I'm not sure how these List() objects will handle assigning to them, so here's this shorthand."""
+        if student not in var:
+            student.append(var)
+
+    def delist(self, var, student):
+        if student in var:
+            student.remove(var)
+
     def free_capacity(self):
         fc = self.capacity - len(self.approved_registrations)
         return fc if fc > 0 else 0
@@ -141,7 +149,7 @@ class MasterclassXBlock(XBlock):
             return u"Ваша заявка ожидает одобрения преподавателем."
         if self.has_ended():
             return u"Прием заявок окончен."
-        if not self.free_capacity and self.approval_required:
+        if not self.free_capacity() and self.approval_required:
             return u"Извините, свободных мест больше нет."
         return u"Вы можете зарегистрироваться на этот мастер-класс."
 
@@ -248,16 +256,27 @@ class MasterclassXBlock(XBlock):
             if self.approval_required:
                 pending_registrants_list = [_student_record(x) for x in self.pending_registrations]
 
+        # I'm getting confused by this condition so let's write it out.
+        registration_available = True
+        # If registration ended, there's that.
+        if self.has_ended():
+            registration_available = False
+        # If we have no free places and do not require approval, there's that, too,
+        # but only if the student is not registered already - then they can unsubscribe.
+        if not self.free_capacity() and not self.approval_required and student not in self.approved_registrations:
+            registration_available = False
+
         frag.add_content(
             self.render_template_from_string(
                 html,
+                registration_available=registration_available,
                 display_name=self.display_name,
                 capacity=self.capacity,
                 last_day=self.get_last_day(self.last_day),
                 has_ended=self.has_ended(),
                 approval_required=self.approval_required,
                 is_course_staff=self.is_user_course_staff(),
-                free=self.free_capacity,
+                free=self.free_capacity(),
                 button_text=self.registration_button_text(student),
                 approved_registrants=sorted(approved_registrants_list, key=itemgetter('last_name')),
                 pending_registrants=sorted(pending_registrants_list, key=itemgetter('last_name')),
@@ -315,7 +334,7 @@ class MasterclassXBlock(XBlock):
                                                               approval_required=self.approval_required,
                                                               display_name=self.display_name,
                                                               capacity=self.capacity,
-                                                              free=self.free_capacity))
+                                                              free=self.free_capacity()))
         return fragment
 
     @XBlock.json_handler
@@ -327,17 +346,75 @@ class MasterclassXBlock(XBlock):
         student = data['student_id']
 
         if self.approval_required and student in self.pending_registrations:
-            self.pending_registrations.remove(student)
-            self.approved_registrations.append(student)
+            self.delist(self.pending_registrations, student)
+            self.enlist(self.approved_registrations, student)
+
             # For the moment that will suffice, I need to test the whole email mechanism first...
             self.send_email_to_student([student], u"О вашей регистрации на мастер-класс.",
                                        u"Ваша заявка на мастер-класс {course_name} - {parent_name} была одобрена.".format(
                                            course_name=self.acquire_course_name(),
                                            parent_name=self.acquire_parent_name()))
-            return {'student_id': student, 'capacity': self.capacity, 'free_places': self.free_capacity}
+            return {'student_id': student, 'capacity': self.capacity, 'free_places': self.free_capacity()}
         else:
             # Shouldn't happen.
             raise
+
+    @XBlock.json_handler
+    def register_button(self, data, suffix=''):
+        """
+        Handle the register button in LMS. Notice this button both registers and unregisters.
+        """
+
+        student = self.acquire_student_id()
+
+        if student is None:
+            return {
+                'registration_status': u"Не записанные на курс студенты не могут участвовать в мастер-классах.",
+                "button_text": u"Зарегистрироваться",
+                'capacity': self.capacity,
+                'free_places': self.free_capacity(),
+            }
+
+        if student in self.pending_registrations:
+            self.delist(self.pending_registrations, student)
+            self.enlist(self.cancelled_registrations, student)
+            result_message = u"Вы отменили заявку на участие в этом мастер-классе."
+        elif student in self.approved_registrations:
+            self.delist(self.approved_registrations, student)
+            self.enlist(self.cancelled_registrations, student)
+            result_message = u"Вы отказались от участия в этом мастер-классе."
+        else:
+            self.delist(self.cancelled_registrations, student)
+            if self.approval_required:
+                self.enlist(self.pending_registrations, student)
+                result_message = u"Ваша заявка ожидает одобрения преподавателем."
+            else:
+                self.enlist(self.approved_registrations, student)
+                result_message = u"Вы были успешно зарегистрированы."
+
+        return {
+            'registration_status': result_message,
+            "button_text": self.registration_button_text(student),
+            'capacity': self.capacity,
+            'free_places': self.free_capacity(),
+        }
+
+    @XBlock.json_handler
+    def refresh_display(self, data, suffix=''):
+        student = self.acquire_student_id()
+
+        if student is None:
+            result_message = u"Не записанные на курс студенты не могут участвовать в мастер-классах."
+            button_text = u"Зарегистрироваться"
+        else:
+            result_message = self.registration_status_string(student)
+            button_text = self.registration_button_text(student)
+        return {
+            'registration_status': result_message,
+            "button_text": button_text,
+            'capacity': self.capacity,
+            'free_places': self.free_capacity(),
+        }
 
     @XBlock.handler
     def get_csv(self, data, suffix=''):
@@ -395,61 +472,6 @@ class MasterclassXBlock(XBlock):
             return {'status': "ok"}
         else:
             return {'status': "fail"}
-
-
-    @XBlock.json_handler
-    def register_button(self, data, suffix=''):
-        """
-        Handle the register button in LMS. Notice this button both registers and unregisters.
-        """
-
-        student = self.acquire_student_id()
-
-        if student is None:
-            return {'registration_status': u"Кнопка регистрации не работает в Студии и не должна.",
-                    "button_text": u"Зарегистрироваться"}
-
-        if student in self.pending_registrations:
-            self.pending_registrations.remove(student)
-            self.cancelled_registrations.append(student)
-            result_message = u"Вы отменили заявку на участие в этом мастер-классе."
-        elif student in self.approved_registrations:
-            self.approved_registrations.remove(student)
-            self.cancelled_registrations.append(student)
-            result_message = u"Вы отказались от участия в этом мастер-классе."
-        else:
-            if student in self.cancelled_registrations:
-                self.cancelled_registrations.remove(student)
-            if self.approval_required:
-                self.pending_registrations.append(student)
-                result_message = u"Ваша заявка ожидает одобрения преподавателем."
-            else:
-                self.approved_registrations.append(student)
-                result_message = u"Вы были успешно зарегистрированы."
-
-        return {
-            'registration_status': result_message,
-            "button_text": self.registration_button_text(student),
-            'capacity': self.capacity,
-            'free_places': self.free_capacity,
-        }
-
-    @XBlock.json_handler
-    def refresh_display(self, data, suffix=''):
-        student = self.acquire_student_id()
-
-        if student is None:
-            result_message = u"Кнопка регистрации не работает в Студии и не должна."
-            button_text = u"Зарегистрироваться"
-        else:
-            result_message = self.registration_status_string(student)
-            button_text = self.registration_button_text(student)
-        return {
-            'registration_status': result_message,
-            "button_text": button_text,
-            'capacity': self.capacity,
-            'free_places': self.free_capacity,
-        }
 
     @XBlock.json_handler
     def save_masterclass(self, data, suffix=''):
