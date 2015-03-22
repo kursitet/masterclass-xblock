@@ -141,6 +141,8 @@ class MasterclassXBlock(XBlock):
             return u"Ваша заявка ожидает одобрения преподавателем."
         if self.has_ended():
             return u"Прием заявок окончен."
+        if not self.free_capacity and self.approval_required:
+            return u"Извините, свободных мест больше нет."
         return u"Вы можете зарегистрироваться на этот мастер-класс."
 
     def registration_button_text(self, student_id):

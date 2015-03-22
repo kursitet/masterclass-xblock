@@ -61,7 +61,7 @@
     {% else %}
     <p class="registration_status"></p>
 
-    {% if not has_ended %}
+    {% if not has_ended and not (approval_required and not free) %}
     <div class="action">
         <button class="show">
             <span class="register_button show-label"></span>
