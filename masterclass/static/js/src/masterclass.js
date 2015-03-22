@@ -56,11 +56,13 @@ function MasterclassXBlock(runtime, element) {
 
     function mailSent(result) {
         $(element).find('.send-mail-wrapper').slideToggle();
+        $(element).find('.send-mail-spin').remove();
         $(element).find('input#email_subject').val('');
         $(element).find('textarea#email_content').val('');
     }
 
     $(element).find('.send-mail-submit').bind('click', function () {
+        $(element).find('.send-mail-submit').append(' <i class="send-mail-spin fa fa-refresh fa-spin"></i>');
         var handlerUrl = runtime.handlerUrl(element, 'send_mail_to_all');
         $.ajax({
             type: "POST",
