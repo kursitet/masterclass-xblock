@@ -17,6 +17,8 @@ function MasterclassXBlock(runtime, element) {
     }
 
     $(element).find('.register_button').bind('click', function () {
+        // Put a spinner on it so that there's a visual indication it's busy.
+        $(element).find('.register_button').append(' <i class="register-spin fa fa-refresh fa-spin"></i>');
         var handlerUrl = runtime.handlerUrl(element, 'register_button');
         $.ajax({
             type: "POST",
