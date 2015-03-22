@@ -149,7 +149,7 @@ class MasterclassXBlock(XBlock):
             return u"Ваша заявка ожидает одобрения преподавателем."
         if self.has_ended():
             return u"Прием заявок окончен."
-        if not self.free_capacity():
+        if not self.free_capacity() and not self.approval_required:
             return u"Извините, свободных мест больше нет. Если кто-то из других слушателей отзовет свою заявку, " \
                    u"или количество свободных мест будет увеличено, они могут появиться в будущем."
         return u"Вы можете зарегистрироваться на этот мастер-класс."
