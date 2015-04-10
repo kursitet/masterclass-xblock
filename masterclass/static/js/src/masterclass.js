@@ -1,7 +1,7 @@
 /* Javascript for MasterclassXBlock. */
 function MasterclassXBlock(runtime, element) {
 
-    $(element).find('.masterclass-get-csv-link').attr('href', runtime.handlerUrl(element, 'get_csv'));
+    $('.masterclass-get-csv-link', element).attr('href', runtime.handlerUrl(element, 'get_csv'));
 
     $.ajax({
         type: "POST",
@@ -16,9 +16,9 @@ function MasterclassXBlock(runtime, element) {
         $('.capacity', element).text(result.free_places + " / " + result.capacity);
     }
 
-    $(element).find('.register_button').bind('click', function () {
+    $('.register_button', element).click(function (eventObject) {
         // Put a spinner on it so that there's a visual indication it's busy.
-        $(element).find('.register_button').append(' <i class="register-spin fa fa-refresh fa-spin"></i>');
+        $('.register_button', element).append(' <i class="register-spin fa fa-refresh fa-spin"></i>');
         var handlerUrl = runtime.handlerUrl(element, 'register_button');
         $.ajax({
             type: "POST",
@@ -39,7 +39,7 @@ function MasterclassXBlock(runtime, element) {
         $(element).find('.capacity').text(result.free_places + " / " + result.capacity);*/
     }
 
-    $(element).find('.student_approval_button').bind('click', function () {
+    $('.student_approval_button', element).click(function (eventObject) {
         var handlerUrl = runtime.handlerUrl(element, 'approval_button');
         var student_id = $(this).data('student');
         $.ajax({
@@ -50,30 +50,30 @@ function MasterclassXBlock(runtime, element) {
         });
     });
 
-    $(element).find('.send-mail-button').bind('click', function () {
-        $(element).find('.send-mail-wrapper').slideToggle();
+    $('.send-mail-button', element).click(function (eventObject) {
+        $('.send-mail-wrapper', element).slideToggle();
     });
 
     function mailSent(result) {
-        $(element).find('.send-mail-wrapper').slideToggle();
-        $(element).find('.send-mail-spin').remove();
-        $(element).find('input#email_subject').val('');
-        $(element).find('textarea#email_content').val('');
+        $('.send-mail-wrapper', element).slideToggle();
+        $('.send-mail-spin', element).remove();
+        $('input#email_subject', element).val('');
+        $('textarea#email_content',element).val('');
     }
 
-    $(element).find('.send-mail-submit').bind('click', function () {
-        $(element).find('.send-mail-submit').append(' <i class="send-mail-spin fa fa-refresh fa-spin"></i>');
+    $('.send-mail-submit', element).click(function (eventObject) {
+        $('.send-mail-submit', element).append(' <i class="send-mail-spin fa fa-refresh fa-spin"></i>');
         var handlerUrl = runtime.handlerUrl(element, 'send_mail_to_all');
         $.ajax({
             type: "POST",
             url: handlerUrl,
             data: JSON.stringify({
-                "subject": $(element).find('input#email_subject').val(),
-                "text": $(element).find('textarea#email_content').val()
+                "subject": $('input#email_subject', element).val(),
+                "text": $('textarea#email_content', element).val()
             }),
             success: mailSent
         });
     });
 
-}
+};
 
