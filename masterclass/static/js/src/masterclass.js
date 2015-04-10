@@ -12,13 +12,13 @@ function MasterclassXBlock(runtime, element) {
 
     function updateStatus(result) {
         $('.registration_status', element).text(result.registration_status);
-        $('.register_button', element).text(result.button_text);
+        $('.register_button .register_button_label', element).text(result.button_text);
         $('.capacity', element).text(result.free_places + " / " + result.capacity);
     }
 
     $('.register_button', element).click(function (eventObject) {
         // Put a spinner on it so that there's a visual indication it's busy.
-        $('.register_button', element).append(' <i class="register-spin fa fa-refresh fa-spin"></i>');
+        $('.register_button_label', element).append(' <i class="register-spin fa fa-refresh fa-spin"></i>');
         var handlerUrl = runtime.handlerUrl(element, 'register_button');
         $.ajax({
             type: "POST",
