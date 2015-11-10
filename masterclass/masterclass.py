@@ -192,7 +192,7 @@ class MasterclassXBlock(XBlock):
         return self.xmodule_runtime.get_user_role() in ['staff', 'instructor']
 
     def get_parent(self):
-        return self.xmodule_runtime.get_block(self.runtime.modulestore.get_parent_location(self.location))
+        return self.runtime.get_block(self.runtime.modulestore.get_parent_location(self.location))
 
     def send_email_to_student(self, receivers, subject, text):
         # Instead of sending the email through the rest of the edX bulk mail system,
