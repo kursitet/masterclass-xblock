@@ -231,11 +231,16 @@ class MasterclassXBlock(XBlock):
         """
 
         def _student_record(student):
+            name = self.acquire_student_name(student)
+            try:
+                last_name = name.split()[-1]
+            except IndexError:
+                last_name = name
             return {
                 'id': student,
-                'name': self.acquire_student_name(student),
+                'name': name,
                 'email': self.acquire_student_email(student),
-                'last_name': self.acquire_student_name(student).split()[-1],
+                'last_name': last_name,
             }
 
         student = self.acquire_student_id()
